@@ -1711,6 +1711,16 @@ const walls =     [
       }
     }
 
+    function aimFromVector(x, y) {
+      if (Math.hypot(x, y) < 0.08) return;
+      player.angle = Math.atan2(y, x);
+      if (Math.abs(x) > Math.abs(y)) {
+        player.direction = x > 0 ? "right" : "left";
+      } else {
+        player.direction = y > 0 ? "down" : "up";
+      }
+    }
+
     function dash() {
       if (player.dashCooldown > 0) return;
       player.dash = 0.16;
@@ -1736,6 +1746,7 @@ const walls =     [
     }
 
     function update(dt) {
+      if (joystickState.active) aimFromVector(joystickState.x, joystickState.y);
       if (pointer.down || keys.has("Space")) shoot();
       if (player.ammo === 0) reload();
 
@@ -1760,12 +1771,7 @@ const walls =     [
       player.moving = move.x !== 0 || move.y !== 0;
       if (player.moving) {
         player.animTime += dt * dashBoost;
-        player.angle = Math.atan2(move.y, move.x);
-        if (Math.abs(move.x) > Math.abs(move.y)) {
-          player.direction = move.x > 0 ? "right" : "left";
-        } else {
-          player.direction = move.y > 0 ? "down" : "up";
-        }
+        aimFromVector(move.x, move.y);
       }
       moveActor(player, (move.x / len) * player.speed * dashBoost * dt, (move.y / len) * player.speed * dashBoost * dt, player.r);
 
@@ -2146,6 +2152,7 @@ const walls =     [
       const ny = dist ? dy / dist : 0;
       joystickState.x = (nx * clamped) / max;
       joystickState.y = (ny * clamped) / max;
+      if (state.running) aimFromVector(joystickState.x, joystickState.y);
       stick.style.transform = `translate(calc(-50% + ${nx * clamped}px), calc(-50% + ${ny * clamped}px))`;
     }
 
