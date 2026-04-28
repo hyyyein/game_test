@@ -151,6 +151,18 @@
         linear-gradient(135deg, rgba(255, 238, 250, 0.34), rgba(167, 221, 255, 0.16) 55%, rgba(255, 157, 214, 0.16));
     }
 
+    .game-over {
+      width: min(540px, calc(100vw - 28px));
+      background:
+        radial-gradient(circle at 20% 14%, rgba(255, 230, 248, 0.24), transparent 36%),
+        linear-gradient(135deg, rgba(52, 30, 58, 0.76), rgba(82, 55, 72, 0.64) 52%, rgba(45, 53, 78, 0.7)),
+        rgba(28, 20, 34, 0.7);
+      box-shadow:
+        0 18px 42px rgba(14, 8, 20, 0.44),
+        inset 0 1px 0 rgba(255, 255, 255, 0.48),
+        inset 0 -1px 0 rgba(255, 156, 215, 0.18);
+    }
+
     .banner h1 {
       margin: 0 0 8px;
       font-size: clamp(30px, 6vw, 52px);
@@ -300,18 +312,104 @@
     }
 
     .leaderboard {
-      max-width: 280px;
-      margin: 14px auto 16px;
-      padding-left: 24px;
+      display: grid;
+      gap: 8px;
+      max-width: 440px;
+      margin: 14px auto 18px;
+      padding: 0;
       color: var(--text);
-      text-align: left;
-      font-size: 14px;
-      line-height: 1.55;
+      list-style: none;
+      text-align: initial;
     }
 
-    .leaderboard li::marker {
-      color: var(--accent);
+    .rank-row {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 50px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(255, 244, 252, 0.24), rgba(255, 168, 220, 0.13), rgba(162, 220, 255, 0.15)),
+        rgba(255, 255, 255, 0.12);
+      box-shadow:
+        0 8px 18px rgba(16, 8, 28, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.48);
+    }
+
+    .rank-row.top-1 {
+      border-color: rgba(255, 229, 142, 0.78);
+      background:
+        linear-gradient(135deg, rgba(255, 237, 168, 0.34), rgba(255, 191, 221, 0.2), rgba(255, 255, 255, 0.16)),
+        rgba(80, 54, 28, 0.3);
+    }
+
+    .rank-row.top-2 {
+      border-color: rgba(224, 238, 255, 0.68);
+    }
+
+    .rank-row.top-3 {
+      border-color: rgba(255, 188, 126, 0.68);
+    }
+
+    .rank-badge {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border: 1px solid rgba(255, 255, 255, 0.64);
+      border-radius: 50%;
+      color: #5b3351;
+      font-size: 16px;
       font-weight: 900;
+      background: linear-gradient(145deg, #ffe7a1, #f5b84c);
+      box-shadow:
+        0 6px 10px rgba(35, 18, 42, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .rank-badge.rank-2 {
+      background: linear-gradient(145deg, #ffffff, #b9cce1);
+    }
+
+    .rank-badge.rank-3 {
+      background: linear-gradient(145deg, #ffd39f, #c47a42);
+    }
+
+    .rank-name {
+      min-width: 0;
+      overflow: hidden;
+      color: #fff8ff;
+      font-size: 17px;
+      font-weight: 900;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      text-shadow: 0 2px 8px rgba(32, 14, 34, 0.55);
+      white-space: nowrap;
+    }
+
+    .rank-score {
+      min-width: 86px;
+      padding: 7px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      border-radius: 8px;
+      background: rgba(255, 248, 255, 0.18);
+      color: #ffe5f7;
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1.05;
+      text-align: right;
+      text-shadow: 0 2px 8px rgba(32, 14, 34, 0.55);
+      white-space: nowrap;
+    }
+
+    .rank-wave {
+      display: block;
+      margin-top: 3px;
+      color: #cfeaff;
+      font-size: 11px;
     }
 
     .character-select {
@@ -425,6 +523,37 @@
         height: 88px;
       }
 
+      .game-over {
+        padding: 16px;
+      }
+
+      .leaderboard {
+        gap: 6px;
+      }
+
+      .rank-row {
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        gap: 7px;
+        min-height: 44px;
+        padding: 7px;
+      }
+
+      .rank-badge {
+        width: 31px;
+        height: 31px;
+        font-size: 14px;
+      }
+
+      .rank-name {
+        font-size: 14px;
+      }
+
+      .rank-score {
+        min-width: 68px;
+        padding: 6px 7px;
+        font-size: 13px;
+      }
+
     }
   </style>
 </head>
@@ -474,7 +603,7 @@
     </div>
   </section>
 
-  <section class="banner hidden" id="gameOverScreen">
+  <section class="banner game-over hidden" id="gameOverScreen">
     <h1>Run Over</h1>
     <p id="finalStats">Score 0</p>
     <ol class="leaderboard" id="leaderboardList"></ol>
@@ -1697,7 +1826,16 @@ const walls =     [
         // Offline or Supabase setup issue: keep the game playable with local scores.
       }
       leaderboardList.innerHTML = entries.length
-        ? entries.map((entry) => `<li>${escapeHtml(entry.name)} · ${entry.score} · W${entry.wave}</li>`).join("")
+        ? entries.map((entry, index) => {
+            const rank = index + 1;
+            const topClass = rank <= 3 ? ` top-${rank}` : "";
+            const badgeClass = rank <= 3 ? ` rank-${rank}` : "";
+            return `<li class="rank-row${topClass}">
+              <span class="rank-badge${badgeClass}">${rank}</span>
+              <span class="rank-name">${escapeHtml(entry.name)}</span>
+              <span class="rank-score">${entry.score}<span class="rank-wave">W${entry.wave}</span></span>
+            </li>`;
+          }).join("")
         : "<li>첫 기록을 기다리는 중</li>";
     }
 
@@ -1712,10 +1850,24 @@ const walls =     [
     }
 
     function moveActor(actor, dx, dy, radius) {
+      const beforeX = actor.x;
+      const beforeY = actor.y;
       const nextX = clamp(actor.x + dx, 28, world.w - 28);
       if (!hitsWall(nextX, actor.y, radius)) actor.x = nextX;
       const nextY = clamp(actor.y + dy, 28, world.h - 28);
       if (!hitsWall(actor.x, nextY, radius)) actor.y = nextY;
+      return Math.hypot(actor.x - beforeX, actor.y - beforeY);
+    }
+
+    function findOpenPointAround(x, y, minRadius, maxRadius, bodyRadius) {
+      for (let i = 0; i < 36; i++) {
+        const angle = rand(0, Math.PI * 2);
+        const radius = rand(minRadius, maxRadius);
+        const px = clamp(x + Math.cos(angle) * radius, 44, world.w - 44);
+        const py = clamp(y + Math.sin(angle) * radius, 44, world.h - 44);
+        if (!hitsWall(px, py, bodyRadius)) return { x: px, y: py };
+      }
+      return null;
     }
 
     function resize() {
@@ -1786,6 +1938,7 @@ const walls =     [
         speed: rand(58, 84) + state.wave * 5,
         hit: 0,
         sway: rand(0, Math.PI * 2),
+        stuck: 0,
         animTime: rand(0, 1),
         direction: "down",
       };
@@ -1905,7 +2058,24 @@ const walls =     [
         const angle = Math.atan2(player.y - zombie.y, player.x - zombie.x) + Math.sin(zombie.sway) * 0.08;
         const vx = Math.cos(angle);
         const vy = Math.sin(angle);
-        moveActor(zombie, vx * zombie.speed * dt, vy * zombie.speed * dt, zombie.r * 0.85);
+        const moved = moveActor(zombie, vx * zombie.speed * dt, vy * zombie.speed * dt, zombie.r * 0.85);
+        if (moved < zombie.speed * dt * 0.22) {
+          zombie.stuck += dt;
+          const side = Math.sin(zombie.sway * 1.7) > 0 ? 1 : -1;
+          const slideX = -vy * side;
+          const slideY = vx * side;
+          moveActor(zombie, slideX * zombie.speed * dt * 0.95, slideY * zombie.speed * dt * 0.95, zombie.r * 0.85);
+          if (zombie.stuck > 1.4 && distance(zombie, player) > 180) {
+            const openPoint = findOpenPointAround(player.x, player.y, 360, 720, zombie.r * 0.85);
+            if (openPoint) {
+              zombie.x = openPoint.x;
+              zombie.y = openPoint.y;
+              zombie.stuck = 0;
+            }
+          }
+        } else {
+          zombie.stuck = 0;
+        }
         zombie.animTime += dt;
         if (Math.abs(vx) > Math.abs(vy)) {
           zombie.direction = vx > 0 ? "right" : "left";
