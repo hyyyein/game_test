@@ -314,6 +314,56 @@
       font-weight: 900;
     }
 
+    .character-select {
+      width: min(560px, calc(100vw - 32px));
+    }
+
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .character-card {
+      min-width: 0;
+      min-height: 190px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 50% 16%, rgba(255, 255, 255, 0.34), transparent 40%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 173, 219, 0.12), rgba(168, 221, 255, 0.18)),
+        var(--panel);
+      color: var(--text);
+      box-shadow:
+        0 12px 26px rgba(67, 28, 72, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.62);
+    }
+
+    .character-card:focus-visible {
+      outline: 2px solid rgba(255, 248, 255, 0.84);
+      outline-offset: 3px;
+    }
+
+    .character-preview {
+      width: 112px;
+      height: 118px;
+      margin: 0 auto 10px;
+      background-repeat: no-repeat;
+      background-size: 400% 400%;
+      background-position: 0 0;
+      filter: drop-shadow(0 8px 12px rgba(35, 18, 42, 0.28));
+    }
+
+    .character-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
     @media (max-width: 720px) {
       .hud {
         inset: 10px;
@@ -357,6 +407,24 @@
         display: flex;
       }
 
+      .character-select {
+        width: min(420px, calc(100vw - 24px));
+      }
+
+      .character-grid {
+        gap: 8px;
+      }
+
+      .character-card {
+        min-height: 154px;
+        padding: 9px;
+      }
+
+      .character-preview {
+        width: 82px;
+        height: 88px;
+      }
+
     }
   </style>
 </head>
@@ -392,6 +460,20 @@
     <button id="startButton">Start Run</button>
   </section>
 
+  <section class="banner character-select hidden" id="characterSelectScreen">
+    <h1>캐릭터 선택</h1>
+    <div class="character-grid">
+      <button class="character-card" data-character="magic" aria-label="핑크 마법소녀 선택">
+        <div class="character-preview" style="background-image: url('assets/player-4dir-spritesheet.png')"></div>
+        <span>마법소녀</span>
+      </button>
+      <button class="character-card" data-character="pistol" aria-label="권총 캐릭터 선택">
+        <div class="character-preview" style="background-image: url('assets/player-gun-spritesheet.png')"></div>
+        <span>권총소녀</span>
+      </button>
+    </div>
+  </section>
+
   <section class="banner hidden" id="gameOverScreen">
     <h1>Run Over</h1>
     <p id="finalStats">Score 0</p>
@@ -417,12 +499,14 @@
     const scoreEl = document.querySelector("#score");
     const ammoEl = document.querySelector("#ammo");
     const startScreen = document.querySelector("#startScreen");
+    const characterSelectScreen = document.querySelector("#characterSelectScreen");
     const gameOverScreen = document.querySelector("#gameOverScreen");
     const finalStats = document.querySelector("#finalStats");
     const startButton = document.querySelector("#startButton");
     const restartButton = document.querySelector("#restartButton");
     const nicknameInput = document.querySelector("#nicknameInput");
     const leaderboardList = document.querySelector("#leaderboardList");
+    const characterCards = document.querySelectorAll(".character-card");
     const touchButtons = document.querySelectorAll(".touch-btn");
     const joystick = document.querySelector("#joystick");
     const stick = document.querySelector("#stick");
@@ -445,6 +529,17 @@
     const scoresEndpoint = `${supabaseUrl}/rest/v1/scores`;
     const world = { w: 2200, h: 2200 };
     const camera = { x: 0, y: 0 };
+    const characters = {
+      magic: {
+        src: "assets/player-4dir-spritesheet.png",
+        bullet: "magic",
+      },
+      pistol: {
+        src: "assets/player-gun-spritesheet.png",
+        bullet: "pistol",
+      },
+    };
+    let selectedCharacter = localStorage.getItem("dead-block-run-character") || "pistol";
 const walls =     [
           {
                 "x": 1150,
@@ -1478,6 +1573,8 @@ const walls =     [
       moving: false,
       direction: "up",
       angle: -Math.PI / 2,
+      character: selectedCharacter,
+      bulletStyle: characters[selectedCharacter].bullet,
     };
 
     function clamp(value, min, max) {
@@ -1504,6 +1601,14 @@ const walls =     [
 
     function cleanName(value) {
       return (value || "").trim().slice(0, 14) || "Player";
+    }
+
+    function applyCharacter(key) {
+      selectedCharacter = characters[key] ? key : "pistol";
+      player.character = selectedCharacter;
+      player.bulletStyle = characters[selectedCharacter].bullet;
+      playerImage.src = characters[selectedCharacter].src;
+      localStorage.setItem("dead-block-run-character", selectedCharacter);
     }
 
     function escapeHtml(value) {
@@ -1621,6 +1726,7 @@ const walls =     [
     }
 
     function resetGame() {
+      applyCharacter(selectedCharacter);
       bgm.currentTime = 0;
       bgm.play().catch(() => {});
       Object.assign(player, {
@@ -1638,6 +1744,8 @@ const walls =     [
         moving: false,
         direction: "up",
         angle: -Math.PI / 2,
+        character: selectedCharacter,
+        bulletStyle: characters[selectedCharacter].bullet,
       });
       nicknameInput.value = player.name;
       localStorage.setItem("dead-block-run-name", player.name);
@@ -1657,6 +1765,7 @@ const walls =     [
       state.props = makeProps();
       spawnPack(7);
       startScreen.classList.add("hidden");
+      characterSelectScreen.classList.add("hidden");
       gameOverScreen.classList.add("hidden");
       updateHud();
       requestAnimationFrame(loop);
@@ -1701,8 +1810,10 @@ const walls =     [
         vy: Math.sin(angle) * 860,
         life: 0.78,
         damage: 34,
+        style: player.bulletStyle,
       });
-      puff(player.x + Math.cos(angle) * 46, player.y + Math.sin(angle) * 46, "#ffc95a", 6, 220);
+      const sparkColor = player.bulletStyle === "pistol" ? "#ffc95a" : "#ff65bc";
+      puff(player.x + Math.cos(angle) * 46, player.y + Math.sin(angle) * 46, sparkColor, 6, 220);
     }
 
     function reload() {
@@ -2029,14 +2140,26 @@ const walls =     [
         ctx.save();
         ctx.translate(bullet.x, bullet.y);
         ctx.rotate(Math.atan2(bullet.vy, bullet.vx));
-        ctx.shadowColor = "#ffc95a";
-        ctx.shadowBlur = 10;
-        ctx.fillStyle = "rgba(255, 185, 70, 0.3)";
-        ctx.fillRect(-18, -2, 18, 4);
-        ctx.fillStyle = "#ffe08a";
-        ctx.fillRect(-4, -3, 14, 6);
-        ctx.fillStyle = "#fff8d6";
-        ctx.fillRect(6, -2, 5, 4);
+        if (bullet.style === "pistol") {
+          ctx.shadowColor = "#ffc95a";
+          ctx.shadowBlur = 10;
+          ctx.fillStyle = "rgba(255, 185, 70, 0.3)";
+          ctx.fillRect(-18, -2, 18, 4);
+          ctx.fillStyle = "#ffe08a";
+          ctx.fillRect(-4, -3, 14, 6);
+          ctx.fillStyle = "#fff8d6";
+          ctx.fillRect(6, -2, 5, 4);
+        } else {
+          ctx.shadowColor = "#ff65bc";
+          ctx.shadowBlur = 12;
+          ctx.fillStyle = "#ff65bc";
+          ctx.beginPath();
+          ctx.arc(0, 0, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#fff2a6";
+          ctx.fillRect(-2, -10, 4, 20);
+          ctx.fillRect(-10, -2, 20, 4);
+        }
         ctx.restore();
       }
     }
@@ -2189,9 +2312,21 @@ const walls =     [
     joystick.addEventListener("pointercancel", resetJoystick);
     joystick.addEventListener("lostpointercapture", resetJoystick);
 
-    startButton.addEventListener("click", resetGame);
+    startButton.addEventListener("click", () => {
+      nicknameInput.value = cleanName(nicknameInput.value);
+      localStorage.setItem("dead-block-run-name", nicknameInput.value);
+      startScreen.classList.add("hidden");
+      characterSelectScreen.classList.remove("hidden");
+    });
+    for (const card of characterCards) {
+      card.addEventListener("click", () => {
+        applyCharacter(card.dataset.character);
+        resetGame();
+      });
+    }
     restartButton.addEventListener("click", resetGame);
     nicknameInput.value = localStorage.getItem("dead-block-run-name") || "";
+    applyCharacter(selectedCharacter);
     renderLeaderboard();
     resize();
     draw();
