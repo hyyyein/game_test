@@ -387,7 +387,7 @@
 
   <section class="banner" id="startScreen">
     <h1>루이에게서 살아남기</h1>
-    <p>사나운 루이를 빨리 처치해. 웨이브가 올라갈수록 더 빠르고 더 많이 올거야.</p>
+    <p>사나운 루이를 빨리 처치해.<br>웨이브가 올라갈수록 더 빠르고 더 많이 올거야.</p>
     <input class="name-input" id="nicknameInput" maxlength="14" placeholder="닉네임" autocomplete="nickname">
     <button id="startButton">Start Run</button>
   </section>
@@ -427,7 +427,7 @@
     const joystick = document.querySelector("#joystick");
     const stick = document.querySelector("#stick");
     const playerImage = new Image();
-    playerImage.src = "assets/player-4dir-spritesheet.png";
+    playerImage.src = "assets/player-gun-spritesheet.png";
     const monsterImage = new Image();
     monsterImage.src = "assets/monster-dog-spritesheet.png";
     const mapImage = new Image();
@@ -1702,7 +1702,7 @@ const walls =     [
         life: 0.78,
         damage: 34,
       });
-      puff(player.x + Math.cos(angle) * 46, player.y + Math.sin(angle) * 46, "#ff65bc", 7, 190);
+      puff(player.x + Math.cos(angle) * 46, player.y + Math.sin(angle) * 46, "#ffc95a", 6, 220);
     }
 
     function reload() {
@@ -2029,15 +2029,14 @@ const walls =     [
         ctx.save();
         ctx.translate(bullet.x, bullet.y);
         ctx.rotate(Math.atan2(bullet.vy, bullet.vx));
-        ctx.shadowColor = "#ff65bc";
-        ctx.shadowBlur = 12;
-        ctx.fillStyle = "#ff65bc";
-        ctx.beginPath();
-        ctx.arc(0, 0, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#fff2a6";
-        ctx.fillRect(-2, -10, 4, 20);
-        ctx.fillRect(-10, -2, 20, 4);
+        ctx.shadowColor = "#ffc95a";
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = "rgba(255, 185, 70, 0.3)";
+        ctx.fillRect(-18, -2, 18, 4);
+        ctx.fillStyle = "#ffe08a";
+        ctx.fillRect(-4, -3, 14, 6);
+        ctx.fillStyle = "#fff8d6";
+        ctx.fillRect(6, -2, 5, 4);
         ctx.restore();
       }
     }
