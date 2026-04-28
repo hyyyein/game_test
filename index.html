@@ -2248,7 +2248,7 @@ const walls =     [
         const directionRows = { down: 0, up: 1, right: 3, left: 2 };
         const row = directionRows[player.direction] ?? 0;
         const col = player.castPulse > 0 && !player.moving ? 3 : player.moving ? walkFrame : 0;
-        const spriteH = 82;
+        const spriteH = player.character === "pistol" ? 94 : 82;
         const spriteW = spriteH * (frameW / frameH);
 
         ctx.drawImage(playerImage, col * frameW, row * frameH, frameW, frameH, -spriteW / 2, -spriteH + 34, spriteW, spriteH);
