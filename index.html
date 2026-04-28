@@ -1,0 +1,2115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dead Block Run</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #171523;
+      --panel: rgba(255, 239, 250, 0.18);
+      --panel-strong: rgba(255, 246, 253, 0.28);
+      --line: rgba(255, 255, 255, 0.42);
+      --text: #fff8ff;
+      --muted: #f5cce9;
+      --accent: #ff9fd6;
+      --accent-blue: #a8ddff;
+      --danger: #ff7f9d;
+      --good: #9ff3d2;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: stretch;
+    }
+
+    canvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      cursor: crosshair;
+      background: #111712;
+    }
+
+    .hud {
+      position: fixed;
+      inset: 16px 16px auto 16px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .cluster {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-width: min(760px, calc(100vw - 320px));
+    }
+
+    .pill,
+    .banner,
+    .help {
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.28), rgba(255, 196, 230, 0.12) 42%, rgba(168, 221, 255, 0.16)),
+        var(--panel);
+      box-shadow:
+        0 14px 34px rgba(67, 28, 72, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.55),
+        inset 0 -1px 0 rgba(255, 156, 215, 0.2);
+      backdrop-filter: blur(16px) saturate(1.25);
+    }
+
+    .pill {
+      display: flex;
+      min-width: 92px;
+      height: 48px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      outline: 1px solid rgba(255, 182, 226, 0.18);
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .label {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .value {
+      display: block;
+      margin-top: 5px;
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bar {
+      position: relative;
+      width: 132px;
+      height: 8px;
+      margin-top: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .bar span {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--good), var(--accent-blue), var(--accent));
+      box-shadow: 0 0 12px rgba(255, 159, 214, 0.55);
+    }
+
+    .help {
+      max-width: 286px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .banner {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      width: min(420px, calc(100vw - 32px));
+      padding: 22px;
+      transform: translate(-50%, -50%);
+      border-radius: 8px;
+      text-align: center;
+      background:
+        radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.32), transparent 34%),
+        linear-gradient(135deg, rgba(255, 238, 250, 0.34), rgba(167, 221, 255, 0.16) 55%, rgba(255, 157, 214, 0.16));
+    }
+
+    .banner h1 {
+      margin: 0 0 8px;
+      font-size: clamp(30px, 6vw, 52px);
+      line-height: 0.95;
+      letter-spacing: 0;
+      text-shadow: 0 2px 16px rgba(255, 134, 207, 0.45);
+    }
+
+    .banner p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    button {
+      min-width: 150px;
+      min-height: 44px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #ffe2f3, var(--accent), var(--accent-blue));
+      color: #40243a;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow:
+        0 10px 22px rgba(255, 124, 198, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    button:hover {
+      filter: brightness(1.07) saturate(1.08);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .touch-controls {
+      position: fixed;
+      inset: auto 16px 18px 16px;
+      display: none;
+      align-items: flex-end;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .joystick {
+      position: relative;
+      width: 132px;
+      height: 132px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.28), rgba(255, 173, 219, 0.16) 45%, rgba(168, 221, 255, 0.18)),
+        var(--panel-strong);
+      pointer-events: auto;
+      touch-action: none;
+      box-shadow:
+        0 12px 26px rgba(67, 28, 72, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.62);
+    }
+
+    .stick {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 54px;
+      height: 54px;
+      border: 1px solid rgba(255, 255, 255, 0.62);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(255, 159, 214, 0.32), rgba(168, 221, 255, 0.36));
+      box-shadow:
+        0 0 22px rgba(255, 159, 214, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .touch-btn {
+      min-width: 48px;
+      min-height: 48px;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.42), rgba(255, 173, 219, 0.2), rgba(168, 221, 255, 0.24)),
+        var(--panel-strong);
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 900;
+      touch-action: none;
+      user-select: none;
+      box-shadow:
+        0 12px 26px rgba(67, 28, 72, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.62);
+    }
+
+    .touch-btn:active,
+    .touch-btn.is-down {
+      transform: translateY(1px);
+      filter: brightness(1.13) saturate(1.12);
+      box-shadow:
+        0 0 22px rgba(255, 159, 214, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.76);
+    }
+
+    .touch-btn.fire {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      font-size: 25px;
+    }
+
+    .touch-btn.dash {
+      width: 58px;
+      height: 58px;
+      align-self: flex-end;
+      font-size: 19px;
+    }
+
+    .name-input {
+      width: min(260px, 100%);
+      height: 42px;
+      margin: 0 0 14px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.18);
+      color: var(--text);
+      font: inherit;
+      font-weight: 800;
+      text-align: center;
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32);
+    }
+
+    .name-input::placeholder {
+      color: rgba(255, 248, 255, 0.7);
+    }
+
+    .leaderboard {
+      max-width: 280px;
+      margin: 14px auto 16px;
+      padding-left: 24px;
+      color: var(--text);
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .leaderboard li::marker {
+      color: var(--accent);
+      font-weight: 900;
+    }
+
+    @media (max-width: 720px) {
+      .hud {
+        inset: 10px;
+        align-items: stretch;
+      }
+
+      .cluster {
+        max-width: 100%;
+      }
+
+      .pill {
+        min-width: 72px;
+        height: 44px;
+        padding-inline: 9px;
+      }
+
+      .value {
+        font-size: 15px;
+      }
+
+      .help {
+        display: none;
+      }
+
+      .touch-controls {
+        display: flex;
+      }
+
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" aria-label="Top-down zombie survival game"></canvas>
+
+  <div class="hud">
+    <div class="cluster">
+      <div class="pill">
+        <span class="label">Health</span>
+        <div class="bar"><span id="healthBar"></span></div>
+      </div>
+      <div class="pill">
+        <span class="label">Wave</span>
+        <span class="value" id="wave">1</span>
+      </div>
+      <div class="pill">
+        <span class="label">Score</span>
+        <span class="value" id="score">0</span>
+      </div>
+      <div class="pill">
+        <span class="label">Ammo</span>
+        <span class="value" id="ammo">24</span>
+      </div>
+    </div>
+    <div class="help">WASD/조이스틱 이동, 클릭 또는 Space로 사격. R로 재장전, Shift로 짧은 회피.</div>
+  </div>
+
+  <section class="banner" id="startScreen">
+    <h1>Dead Block Run</h1>
+    <p>버려진 블록을 버티며 몰려오는 좀비를 처리해. 웨이브가 올라갈수록 더 빠르고 더 많이 몰려온다.</p>
+    <input class="name-input" id="nicknameInput" maxlength="14" placeholder="닉네임" autocomplete="nickname">
+    <button id="startButton">Start Run</button>
+  </section>
+
+  <section class="banner hidden" id="gameOverScreen">
+    <h1>Run Over</h1>
+    <p id="finalStats">Score 0</p>
+    <ol class="leaderboard" id="leaderboardList"></ol>
+    <button id="restartButton">Restart</button>
+  </section>
+
+  <div class="touch-controls" aria-label="Mobile controls">
+    <div class="joystick" id="joystick" aria-label="Move joystick">
+      <div class="stick" id="stick"></div>
+    </div>
+    <div class="actions">
+      <button class="touch-btn dash" data-tap="dash" aria-label="Dash">✦</button>
+      <button class="touch-btn fire" data-key="Space" aria-label="Fire">★</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.querySelector("#game");
+    const ctx = canvas.getContext("2d");
+    const healthBar = document.querySelector("#healthBar");
+    const waveEl = document.querySelector("#wave");
+    const scoreEl = document.querySelector("#score");
+    const ammoEl = document.querySelector("#ammo");
+    const startScreen = document.querySelector("#startScreen");
+    const gameOverScreen = document.querySelector("#gameOverScreen");
+    const finalStats = document.querySelector("#finalStats");
+    const startButton = document.querySelector("#startButton");
+    const restartButton = document.querySelector("#restartButton");
+    const nicknameInput = document.querySelector("#nicknameInput");
+    const leaderboardList = document.querySelector("#leaderboardList");
+    const touchButtons = document.querySelectorAll(".touch-btn");
+    const joystick = document.querySelector("#joystick");
+    const stick = document.querySelector("#stick");
+    const playerImage = new Image();
+    playerImage.src = "assets/player-4dir-spritesheet.png";
+    const monsterImage = new Image();
+    monsterImage.src = "assets/monster-dog-spritesheet.png";
+    const mapImage = new Image();
+    mapImage.src = "assets/map-texture.png";
+    const bgm = new Audio("assets/bgm.mp3");
+    bgm.loop = true;
+    bgm.volume = 0.42;
+
+    const keys = new Set();
+    const pointer = { x: 0, y: 0, down: false };
+    const joystickState = { active: false, x: 0, y: 0, pointerId: null };
+    const leaderboardKey = "dead-block-run-leaderboard";
+    const world = { w: 2200, h: 2200 };
+    const camera = { x: 0, y: 0 };
+const walls =     [
+          {
+                "x": 1150,
+                "y": 22,
+                "w": 82,
+                "h": 87
+          },
+          {
+                "x": 1148,
+                "y": 110,
+                "w": 108,
+                "h": 76
+          },
+          {
+                "x": 1243,
+                "y": 15,
+                "w": 229,
+                "h": 174
+          },
+          {
+                "x": 867,
+                "y": 7,
+                "w": 161,
+                "h": 181
+          },
+          {
+                "x": 1205,
+                "y": 168,
+                "w": 69,
+                "h": 67
+          },
+          {
+                "x": 1398,
+                "y": 143,
+                "w": 25,
+                "h": 94
+          },
+          {
+                "x": 1471,
+                "y": 177,
+                "w": 111,
+                "h": 57
+          },
+          {
+                "x": 1480,
+                "y": 9,
+                "w": 165,
+                "h": 164
+          },
+          {
+                "x": 1646,
+                "y": 4,
+                "w": 234,
+                "h": 168
+          },
+          {
+                "x": 1452,
+                "y": 384,
+                "w": 78,
+                "h": 131
+          },
+          {
+                "x": 1575,
+                "y": 173,
+                "w": 92,
+                "h": 140
+          },
+          {
+                "x": 1620,
+                "y": 308,
+                "w": 86,
+                "h": 38
+          },
+          {
+                "x": 1659,
+                "y": 338,
+                "w": 95,
+                "h": 38
+          },
+          {
+                "x": 1712,
+                "y": 369,
+                "w": 134,
+                "h": 49
+          },
+          {
+                "x": 1774,
+                "y": 447,
+                "w": 89,
+                "h": 29
+          },
+          {
+                "x": 1803,
+                "y": 402,
+                "w": 56,
+                "h": 45
+          },
+          {
+                "x": 1663,
+                "y": 227,
+                "w": 81,
+                "h": 84
+          },
+          {
+                "x": 1711,
+                "y": 272,
+                "w": 91,
+                "h": 98
+          },
+          {
+                "x": 1807,
+                "y": 293,
+                "w": 73,
+                "h": 94
+          },
+          {
+                "x": 1768,
+                "y": 534,
+                "w": 121,
+                "h": 131
+          },
+          {
+                "x": 1850,
+                "y": 476,
+                "w": 35,
+                "h": 77
+          },
+          {
+                "x": 1716,
+                "y": 537,
+                "w": 105,
+                "h": 106
+          },
+          {
+                "x": 1666,
+                "y": 585,
+                "w": 93,
+                "h": 39
+          },
+          {
+                "x": 1689,
+                "y": 547,
+                "w": 30,
+                "h": 31
+          },
+          {
+                "x": 1594,
+                "y": 653,
+                "w": 81,
+                "h": 47
+          },
+          {
+                "x": 1614,
+                "y": 635,
+                "w": 85,
+                "h": 24
+          },
+          {
+                "x": 1673,
+                "y": 657,
+                "w": 25,
+                "h": 30
+          },
+          {
+                "x": 1633,
+                "y": 783,
+                "w": 71,
+                "h": 91
+          },
+          {
+                "x": 1644,
+                "y": 762,
+                "w": 30,
+                "h": 27
+          },
+          {
+                "x": 1577,
+                "y": 772,
+                "w": 96,
+                "h": 61
+          },
+          {
+                "x": 1577,
+                "y": 701,
+                "w": 65,
+                "h": 79
+          },
+          {
+                "x": 1581,
+                "y": 664,
+                "w": 15,
+                "h": 56
+          },
+          {
+                "x": 1635,
+                "y": 623,
+                "w": 63,
+                "h": 27
+          },
+          {
+                "x": 1651,
+                "y": 601,
+                "w": 27,
+                "h": 19
+          },
+          {
+                "x": 2050,
+                "y": 221,
+                "w": 47,
+                "h": 68
+          },
+          {
+                "x": 1881,
+                "y": 46,
+                "w": 162,
+                "h": 122
+          },
+          {
+                "x": 1982,
+                "y": 158,
+                "w": 108,
+                "h": 49
+          },
+          {
+                "x": 2006,
+                "y": 199,
+                "w": 88,
+                "h": 33
+          },
+          {
+                "x": 2103,
+                "y": 253,
+                "w": 67,
+                "h": 183
+          },
+          {
+                "x": 2054,
+                "y": 428,
+                "w": 89,
+                "h": 71
+          },
+          {
+                "x": 2061,
+                "y": 476,
+                "w": 67,
+                "h": 52
+          },
+          {
+                "x": 2105,
+                "y": 514,
+                "w": 40,
+                "h": 43
+          },
+          {
+                "x": 2112,
+                "y": 547,
+                "w": 56,
+                "h": 89
+          },
+          {
+                "x": 2073,
+                "y": 598,
+                "w": 89,
+                "h": 92
+          },
+          {
+                "x": 2107,
+                "y": 693,
+                "w": 69,
+                "h": 103
+          },
+          {
+                "x": 1939,
+                "y": 770,
+                "w": 189,
+                "h": 55
+          },
+          {
+                "x": 1899,
+                "y": 791,
+                "w": 130,
+                "h": 98
+          },
+          {
+                "x": 1883,
+                "y": 816,
+                "w": 44,
+                "h": 78
+          },
+          {
+                "x": 1919,
+                "y": 877,
+                "w": 103,
+                "h": 49
+          },
+          {
+                "x": 1970,
+                "y": 922,
+                "w": 85,
+                "h": 26
+          },
+          {
+                "x": 2013,
+                "y": 944,
+                "w": 104,
+                "h": 52
+          },
+          {
+                "x": 2064,
+                "y": 1000,
+                "w": 83,
+                "h": 127
+          },
+          {
+                "x": 2023,
+                "y": 988,
+                "w": 60,
+                "h": 61
+          },
+          {
+                "x": 2103,
+                "y": 1093,
+                "w": 54,
+                "h": 182
+          },
+          {
+                "x": 1929,
+                "y": 1303,
+                "w": 186,
+                "h": 182
+          },
+          {
+                "x": 1841,
+                "y": 1264,
+                "w": 82,
+                "h": 107
+          },
+          {
+                "x": 1537,
+                "y": 1466,
+                "w": 15,
+                "h": 31
+          },
+          {
+                "x": 1523,
+                "y": 1507,
+                "w": 50,
+                "h": 41
+          },
+          {
+                "x": 1483,
+                "y": 1557,
+                "w": 72,
+                "h": 65
+          },
+          {
+                "x": 1528,
+                "y": 1533,
+                "w": 51,
+                "h": 68
+          },
+          {
+                "x": 1769,
+                "y": 1647,
+                "w": 58,
+                "h": 60
+          },
+          {
+                "x": 1795,
+                "y": 1629,
+                "w": 68,
+                "h": 18
+          },
+          {
+                "x": 1823,
+                "y": 1610,
+                "w": 248,
+                "h": 115
+          },
+          {
+                "x": 1866,
+                "y": 1592,
+                "w": 103,
+                "h": 38
+          },
+          {
+                "x": 1950,
+                "y": 1562,
+                "w": 148,
+                "h": 85
+          },
+          {
+                "x": 1776,
+                "y": 1698,
+                "w": 182,
+                "h": 76
+          },
+          {
+                "x": 1831,
+                "y": 1766,
+                "w": 224,
+                "h": 73
+          },
+          {
+                "x": 1912,
+                "y": 1671,
+                "w": 197,
+                "h": 133
+          },
+          {
+                "x": 2082,
+                "y": 1595,
+                "w": 48,
+                "h": 111
+          },
+          {
+                "x": 2050,
+                "y": 1617,
+                "w": 84,
+                "h": 105
+          },
+          {
+                "x": 1918,
+                "y": 1211,
+                "w": 96,
+                "h": 113
+          },
+          {
+                "x": 1870,
+                "y": 1235,
+                "w": 96,
+                "h": 59
+          },
+          {
+                "x": 2003,
+                "y": 1288,
+                "w": 136,
+                "h": 31
+          },
+          {
+                "x": 532,
+                "y": 1280,
+                "w": 86,
+                "h": 102
+          },
+          {
+                "x": 170,
+                "y": 1145,
+                "w": 131,
+                "h": 122
+          },
+          {
+                "x": 297,
+                "y": 869,
+                "w": 103,
+                "h": 115
+          },
+          {
+                "x": 393,
+                "y": 844,
+                "w": 55,
+                "h": 117
+          },
+          {
+                "x": 697,
+                "y": 343,
+                "w": 103,
+                "h": 118
+          },
+          {
+                "x": 645,
+                "y": 40,
+                "w": 239,
+                "h": 96
+          },
+          {
+                "x": 571,
+                "y": 48,
+                "w": 106,
+                "h": 149
+          },
+          {
+                "x": 329,
+                "y": 324,
+                "w": 196,
+                "h": 172
+          },
+          {
+                "x": 530,
+                "y": 261,
+                "w": 72,
+                "h": 84
+          },
+          {
+                "x": 600,
+                "y": 194,
+                "w": 71,
+                "h": 73
+          },
+          {
+                "x": 225,
+                "y": 81,
+                "w": 433,
+                "h": 81
+          },
+          {
+                "x": 161,
+                "y": 164,
+                "w": 122,
+                "h": 105
+          },
+          {
+                "x": 80,
+                "y": 457,
+                "w": 131,
+                "h": 167
+          },
+          {
+                "x": 93,
+                "y": 801,
+                "w": 132,
+                "h": 190
+          },
+          {
+                "x": 217,
+                "y": 862,
+                "w": 114,
+                "h": 125
+          },
+          {
+                "x": 104,
+                "y": 1330,
+                "w": 182,
+                "h": 117
+          },
+          {
+                "x": 88,
+                "y": 1482,
+                "w": 119,
+                "h": 137
+          },
+          {
+                "x": 324,
+                "y": 1723,
+                "w": 307,
+                "h": 97
+          },
+          {
+                "x": 590,
+                "y": 1791,
+                "w": 80,
+                "h": 87
+          },
+          {
+                "x": 122,
+                "y": 1798,
+                "w": 64,
+                "h": 147
+          },
+          {
+                "x": 178,
+                "y": 1853,
+                "w": 66,
+                "h": 69
+          },
+          {
+                "x": 118,
+                "y": 1919,
+                "w": 96,
+                "h": 67
+          },
+          {
+                "x": 512,
+                "y": 1510,
+                "w": 162,
+                "h": 122
+          },
+          {
+                "x": 569,
+                "y": 1464,
+                "w": 53,
+                "h": 57
+          },
+          {
+                "x": 529,
+                "y": 1485,
+                "w": 57,
+                "h": 32
+          },
+          {
+                "x": 641,
+                "y": 1585,
+                "w": 40,
+                "h": 193
+          },
+          {
+                "x": 658,
+                "y": 1689,
+                "w": 99,
+                "h": 131
+          },
+          {
+                "x": 715,
+                "y": 1804,
+                "w": 110,
+                "h": 71
+          },
+          {
+                "x": 747,
+                "y": 1710,
+                "w": 52,
+                "h": 111
+          },
+          {
+                "x": 723,
+                "y": 1828,
+                "w": 264,
+                "h": 160
+          },
+          {
+                "x": 1133,
+                "y": 1865,
+                "w": 157,
+                "h": 115
+          },
+          {
+                "x": 1216,
+                "y": 1836,
+                "w": 142,
+                "h": 110
+          },
+          {
+                "x": 1410,
+                "y": 1737,
+                "w": 183,
+                "h": 112
+          },
+          {
+                "x": 1349,
+                "y": 1797,
+                "w": 66,
+                "h": 95
+          },
+          {
+                "x": 1552,
+                "y": 1801,
+                "w": 93,
+                "h": 65
+          },
+          {
+                "x": 1485,
+                "y": 1954,
+                "w": 67,
+                "h": 197
+          },
+          {
+                "x": 1186,
+                "y": 2079,
+                "w": 268,
+                "h": 88
+          },
+          {
+                "x": 732,
+                "y": 2085,
+                "w": 214,
+                "h": 91
+          },
+          {
+                "x": 645,
+                "y": 1943,
+                "w": 89,
+                "h": 199
+          },
+          {
+                "x": 671,
+                "y": 1910,
+                "w": 77,
+                "h": 53
+          },
+          {
+                "x": 221,
+                "y": 2075,
+                "w": 490,
+                "h": 88
+          },
+          {
+                "x": 79,
+                "y": 2030,
+                "w": 60,
+                "h": 62
+          },
+          {
+                "x": 139,
+                "y": 2093,
+                "w": 155,
+                "h": 78
+          },
+          {
+                "x": 40,
+                "y": 1637,
+                "w": 61,
+                "h": 158
+          },
+          {
+                "x": 1599,
+                "y": 1831,
+                "w": 58,
+                "h": 133
+          },
+          {
+                "x": 1535,
+                "y": 2053,
+                "w": 179,
+                "h": 112
+          },
+          {
+                "x": 1708,
+                "y": 2080,
+                "w": 219,
+                "h": 88
+          },
+          {
+                "x": 1929,
+                "y": 2088,
+                "w": 240,
+                "h": 74
+          },
+          {
+                "x": 2075,
+                "y": 1803,
+                "w": 73,
+                "h": 172
+          },
+          {
+                "x": 1147,
+                "y": 2100,
+                "w": 68,
+                "h": 79
+          },
+          {
+                "x": 554,
+                "y": 424,
+                "w": 82,
+                "h": 240
+          },
+          {
+                "x": 463,
+                "y": 634,
+                "w": 136,
+                "h": 79
+          },
+          {
+                "x": 425,
+                "y": 677,
+                "w": 51,
+                "h": 175
+          },
+          {
+                "x": 500,
+                "y": 396,
+                "w": 69,
+                "h": 110
+          },
+          {
+                "x": 297,
+                "y": 377,
+                "w": 128,
+                "h": 151
+          },
+          {
+                "x": 2098,
+                "y": 1452,
+                "w": 71,
+                "h": 153
+          },
+          {
+                "x": 2104,
+                "y": 1291,
+                "w": 86,
+                "h": 166
+          },
+          {
+                "x": 2082,
+                "y": 1657,
+                "w": 100,
+                "h": 153
+          },
+          {
+                "x": 1983,
+                "y": 1816,
+                "w": 146,
+                "h": 37
+          },
+          {
+                "x": 2121,
+                "y": 1577,
+                "w": 58,
+                "h": 102
+          },
+          {
+                "x": 2025,
+                "y": 811,
+                "w": 117,
+                "h": 148
+          },
+          {
+                "x": 2116,
+                "y": 960,
+                "w": 73,
+                "h": 153
+          },
+          {
+                "x": 2131,
+                "y": 768,
+                "w": 61,
+                "h": 207
+          },
+          {
+                "x": 2149,
+                "y": 1084,
+                "w": 51,
+                "h": 200
+          },
+          {
+                "x": 2104,
+                "y": 1245,
+                "w": 56,
+                "h": 85
+          },
+          {
+                "x": 2163,
+                "y": 1443,
+                "w": 25,
+                "h": 163
+          },
+          {
+                "x": 2047,
+                "y": 97,
+                "w": 133,
+                "h": 172
+          },
+          {
+                "x": 1979,
+                "y": 13,
+                "w": 188,
+                "h": 93
+          },
+          {
+                "x": 1882,
+                "y": 5,
+                "w": 112,
+                "h": 42
+          },
+          {
+                "x": 2158,
+                "y": 18,
+                "w": 37,
+                "h": 101
+          },
+          {
+                "x": 24,
+                "y": 59,
+                "w": 212,
+                "h": 103
+          },
+          {
+                "x": 31,
+                "y": 153,
+                "w": 71,
+                "h": 289
+          },
+          {
+                "x": 80,
+                "y": 120,
+                "w": 115,
+                "h": 125
+          },
+          {
+                "x": 117,
+                "y": 253,
+                "w": 54,
+                "h": 66
+          },
+          {
+                "x": 116,
+                "y": 378,
+                "w": 46,
+                "h": 40
+          },
+          {
+                "x": 43,
+                "y": 605,
+                "w": 59,
+                "h": 198
+          },
+          {
+                "x": 27,
+                "y": 365,
+                "w": 46,
+                "h": 241
+          },
+          {
+                "x": 33,
+                "y": 870,
+                "w": 56,
+                "h": 320
+          },
+          {
+                "x": 38,
+                "y": 698,
+                "w": 59,
+                "h": 231
+          },
+          {
+                "x": 31,
+                "y": 1188,
+                "w": 64,
+                "h": 315
+          },
+          {
+                "x": 28,
+                "y": 1488,
+                "w": 65,
+                "h": 189
+          },
+          {
+                "x": 93,
+                "y": 990,
+                "w": 42,
+                "h": 50
+          },
+          {
+                "x": 42,
+                "y": 1770,
+                "w": 84,
+                "h": 136
+          },
+          {
+                "x": 5,
+                "y": 1857,
+                "w": 94,
+                "h": 205
+          },
+          {
+                "x": 7,
+                "y": 2053,
+                "w": 153,
+                "h": 128
+          },
+          {
+                "x": 10,
+                "y": 1424,
+                "w": 28,
+                "h": 254
+          },
+          {
+                "x": 7,
+                "y": 1680,
+                "w": 36,
+                "h": 241
+          },
+          {
+                "x": 9,
+                "y": 843,
+                "w": 37,
+                "h": 244
+          },
+          {
+                "x": 11,
+                "y": 591,
+                "w": 94,
+                "h": 316
+          },
+          {
+                "x": 489,
+                "y": 297,
+                "w": 46,
+                "h": 26
+          },
+          {
+                "x": 1376,
+                "y": 1764,
+                "w": 65,
+                "h": 31
+          },
+          {
+                "x": 2026,
+                "y": 1841,
+                "w": 86,
+                "h": 47
+          },
+          {
+                "x": 2148,
+                "y": 1791,
+                "w": 36,
+                "h": 198
+          }
+    ];
+    const state = {
+      running: false,
+      last: 0,
+      score: 0,
+      wave: 1,
+      waveKills: 0,
+      nextWaveKills: 10,
+      spawnTimer: 0,
+      particles: [],
+      bullets: [],
+      zombies: [],
+      pickups: [],
+      props: [],
+    };
+
+    const player = {
+      x: world.w / 2,
+      y: world.h / 2,
+      r: 18,
+      hp: 100,
+      maxHp: 100,
+      speed: 260,
+      dash: 0,
+      dashCooldown: 0,
+      invulnerable: 0,
+      ammo: 24,
+      maxAmmo: 24,
+      name: "Player",
+      reload: 0,
+      fireCooldown: 0,
+      castPulse: 0,
+      animTime: 0,
+      moving: false,
+      direction: "up",
+      angle: -Math.PI / 2,
+    };
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function updateCamera() {
+      camera.x = clamp(player.x - window.innerWidth / 2, 0, world.w - window.innerWidth);
+      camera.y = clamp(player.y - window.innerHeight / 2, 0, world.h - window.innerHeight);
+    }
+
+    function isMoveKey(code) {
+      return code === "KeyW" || code === "KeyA" || code === "KeyS" || code === "KeyD" ||
+        code === "ArrowUp" || code === "ArrowDown" || code === "ArrowLeft" || code === "ArrowRight";
+    }
+
+    function cleanName(value) {
+      return (value || "").trim().slice(0, 14) || "Player";
+    }
+
+    function loadLeaderboard() {
+      try {
+        const entries = JSON.parse(localStorage.getItem(leaderboardKey) || "[]");
+        return Array.isArray(entries) ? entries : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveScore() {
+      const entries = loadLeaderboard();
+      entries.push({
+        name: player.name,
+        score: state.score,
+        wave: state.wave,
+        date: Date.now(),
+      });
+      entries.sort((a, b) => b.score - a.score || b.wave - a.wave || a.date - b.date);
+      localStorage.setItem(leaderboardKey, JSON.stringify(entries.slice(0, 10)));
+      renderLeaderboard();
+    }
+
+    function renderLeaderboard() {
+      const entries = loadLeaderboard();
+      leaderboardList.innerHTML = entries.length
+        ? entries.map((entry) => `<li>${entry.name} · ${entry.score} · W${entry.wave}</li>`).join("")
+        : "<li>첫 기록을 기다리는 중</li>";
+    }
+
+    function circleHitsRect(x, y, r, rect) {
+      const nearestX = clamp(x, rect.x, rect.x + rect.w);
+      const nearestY = clamp(y, rect.y, rect.y + rect.h);
+      return Math.hypot(x - nearestX, y - nearestY) < r;
+    }
+
+    function hitsWall(x, y, r) {
+      return walls.some((wall) => circleHitsRect(x, y, r, wall));
+    }
+
+    function moveActor(actor, dx, dy, radius) {
+      const nextX = clamp(actor.x + dx, 28, world.w - 28);
+      if (!hitsWall(nextX, actor.y, radius)) actor.x = nextX;
+      const nextY = clamp(actor.y + dy, 28, world.h - 28);
+      if (!hitsWall(actor.x, nextY, radius)) actor.y = nextY;
+    }
+
+    function resize() {
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function resetGame() {
+      bgm.currentTime = 0;
+      bgm.play().catch(() => {});
+      Object.assign(player, {
+        x: world.w / 2,
+        y: world.h / 2,
+        hp: 100,
+        ammo: 24,
+        name: cleanName(nicknameInput.value),
+        reload: 0,
+        dash: 0,
+        dashCooldown: 0,
+        invulnerable: 0,
+        fireCooldown: 0,
+        animTime: 0,
+        moving: false,
+        direction: "up",
+        angle: -Math.PI / 2,
+      });
+      nicknameInput.value = player.name;
+      localStorage.setItem("dead-block-run-name", player.name);
+      Object.assign(state, {
+        running: true,
+        last: performance.now(),
+        score: 0,
+        wave: 1,
+        waveKills: 0,
+        nextWaveKills: 10,
+        spawnTimer: 0,
+        particles: [],
+        bullets: [],
+        zombies: [],
+        pickups: [],
+      });
+      state.props = makeProps();
+      spawnPack(7);
+      startScreen.classList.add("hidden");
+      gameOverScreen.classList.add("hidden");
+      updateHud();
+      requestAnimationFrame(loop);
+    }
+
+    function makeProps() {
+      return [];
+    }
+
+    function spawnZombie() {
+      const edge = Math.floor(rand(0, 4));
+      const z = {
+        x: edge === 0 ? -80 : edge === 1 ? world.w + 80 : rand(0, world.w),
+        y: edge === 2 ? -80 : edge === 3 ? world.h + 80 : rand(0, world.h),
+        r: rand(15, 23),
+        hp: 42 + state.wave * 8,
+        maxHp: 42 + state.wave * 8,
+        speed: rand(58, 84) + state.wave * 5,
+        hit: 0,
+        sway: rand(0, Math.PI * 2),
+        animTime: rand(0, 1),
+        direction: "down",
+      };
+      state.zombies.push(z);
+    }
+
+    function spawnPack(count) {
+      for (let i = 0; i < count; i++) spawnZombie();
+    }
+
+    function shoot() {
+      if (player.fireCooldown > 0 || player.reload > 0 || player.ammo <= 0) return;
+      player.ammo -= 1;
+      player.fireCooldown = 0.105;
+      player.castPulse = 0.2;
+      const spread = rand(-0.04, 0.04);
+      const angle = player.angle + spread;
+      state.bullets.push({
+        x: player.x + Math.cos(angle) * 42,
+        y: player.y + Math.sin(angle) * 42,
+        vx: Math.cos(angle) * 860,
+        vy: Math.sin(angle) * 860,
+        life: 0.78,
+        damage: 34,
+      });
+      puff(player.x + Math.cos(angle) * 46, player.y + Math.sin(angle) * 46, "#ff65bc", 7, 190);
+    }
+
+    function reload() {
+      if (player.reload <= 0 && player.ammo < player.maxAmmo) {
+        player.reload = 0.95;
+      }
+    }
+
+    function dash() {
+      if (player.dashCooldown > 0) return;
+      player.dash = 0.16;
+      player.dashCooldown = 1.15;
+      player.invulnerable = 0.24;
+    }
+
+    function puff(x, y, color, count, speed) {
+      for (let i = 0; i < count; i++) {
+        const a = rand(0, Math.PI * 2);
+        const s = rand(speed * 0.25, speed);
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s,
+          r: rand(2, 5),
+          life: rand(0.24, 0.58),
+          maxLife: 0.58,
+          color,
+        });
+      }
+    }
+
+    function update(dt) {
+      if (pointer.down || keys.has("Space")) shoot();
+      if (player.ammo === 0) reload();
+
+      const wasReloading = player.reload > 0;
+      player.fireCooldown = Math.max(0, player.fireCooldown - dt);
+      player.reload = Math.max(0, player.reload - dt);
+      player.dash = Math.max(0, player.dash - dt);
+      player.dashCooldown = Math.max(0, player.dashCooldown - dt);
+      player.invulnerable = Math.max(0, player.invulnerable - dt);
+      player.castPulse = Math.max(0, player.castPulse - dt);
+      if (wasReloading && player.reload === 0) player.ammo = player.maxAmmo;
+
+      const move = { x: 0, y: 0 };
+      if (keys.has("KeyW") || keys.has("ArrowUp")) move.y -= 1;
+      if (keys.has("KeyS") || keys.has("ArrowDown")) move.y += 1;
+      if (keys.has("KeyA") || keys.has("ArrowLeft")) move.x -= 1;
+      if (keys.has("KeyD") || keys.has("ArrowRight")) move.x += 1;
+      move.x += joystickState.x;
+      move.y += joystickState.y;
+      const len = Math.hypot(move.x, move.y) || 1;
+      const dashBoost = player.dash > 0 ? 2.7 : 1;
+      player.moving = move.x !== 0 || move.y !== 0;
+      if (player.moving) {
+        player.animTime += dt * dashBoost;
+        player.angle = Math.atan2(move.y, move.x);
+        if (Math.abs(move.x) > Math.abs(move.y)) {
+          player.direction = move.x > 0 ? "right" : "left";
+        } else {
+          player.direction = move.y > 0 ? "down" : "up";
+        }
+      }
+      moveActor(player, (move.x / len) * player.speed * dashBoost * dt, (move.y / len) * player.speed * dashBoost * dt, player.r);
+
+      state.spawnTimer -= dt;
+      if (state.spawnTimer <= 0) {
+        spawnZombie();
+        state.spawnTimer = Math.max(0.32, 1.35 - state.wave * 0.08);
+      }
+
+      for (const bullet of state.bullets) {
+        bullet.x += bullet.vx * dt;
+        bullet.y += bullet.vy * dt;
+        bullet.life -= dt;
+      }
+      state.bullets = state.bullets.filter((b) => b.life > 0 && b.x > -80 && b.y > -80 && b.x < world.w + 80 && b.y < world.h + 80 && !hitsWall(b.x, b.y, 5));
+
+      for (const zombie of state.zombies) {
+        zombie.hit = Math.max(0, zombie.hit - dt);
+        zombie.sway += dt * 3;
+        const angle = Math.atan2(player.y - zombie.y, player.x - zombie.x) + Math.sin(zombie.sway) * 0.08;
+        const vx = Math.cos(angle);
+        const vy = Math.sin(angle);
+        moveActor(zombie, vx * zombie.speed * dt, vy * zombie.speed * dt, zombie.r * 0.85);
+        zombie.animTime += dt;
+        if (Math.abs(vx) > Math.abs(vy)) {
+          zombie.direction = vx > 0 ? "right" : "left";
+        } else {
+          zombie.direction = vy > 0 ? "down" : "up";
+        }
+
+        if (distance(zombie, player) < zombie.r + player.r && player.invulnerable <= 0) {
+          player.hp -= 13;
+          player.invulnerable = 0.55;
+          zombie.x -= Math.cos(angle) * 36;
+          zombie.y -= Math.sin(angle) * 36;
+          puff(player.x, player.y, "#f06b59", 10, 150);
+          if (player.hp <= 0) endGame();
+        }
+      }
+
+      for (const bullet of state.bullets) {
+        for (const zombie of state.zombies) {
+          if (zombie.hp <= 0 || distance(bullet, zombie) > zombie.r + 4) continue;
+          zombie.hp -= bullet.damage;
+          zombie.hit = 0.1;
+          bullet.life = 0;
+          puff(bullet.x, bullet.y, "#9acd6e", 6, 130);
+          if (zombie.hp <= 0) killZombie(zombie);
+          break;
+        }
+      }
+
+      state.zombies = state.zombies.filter((z) => z.hp > 0);
+
+      for (const pickup of state.pickups) {
+        pickup.spin += dt * 4;
+        if (distance(pickup, player) < 34) {
+          if (pickup.type === "health") player.hp = Math.min(player.maxHp, player.hp + 24);
+          if (pickup.type === "ammo") player.ammo = player.maxAmmo;
+          pickup.life = 0;
+          puff(pickup.x, pickup.y, pickup.type === "health" ? "#6fd08c" : "#e9c46a", 12, 125);
+        }
+        pickup.life -= dt;
+      }
+      state.pickups = state.pickups.filter((p) => p.life > 0);
+
+      for (const p of state.particles) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vx *= 0.94;
+        p.vy *= 0.94;
+        p.life -= dt;
+      }
+      state.particles = state.particles.filter((p) => p.life > 0);
+
+      updateCamera();
+      updateHud();
+    }
+
+    function killZombie(zombie) {
+      state.score += 100 + state.wave * 12;
+      state.waveKills += 1;
+      puff(zombie.x, zombie.y, "#587747", 18, 180);
+      if (Math.random() < 0.16) {
+        state.pickups.push({
+          x: zombie.x,
+          y: zombie.y,
+          type: Math.random() < 0.45 ? "health" : "ammo",
+          spin: 0,
+          life: 9,
+        });
+      }
+      if (state.waveKills >= state.nextWaveKills) {
+        state.wave += 1;
+        state.waveKills = 0;
+        state.nextWaveKills += 5;
+        player.maxAmmo = Math.min(42, player.maxAmmo + 2);
+        player.ammo = player.maxAmmo;
+        player.hp = Math.min(player.maxHp, player.hp + 18);
+        spawnPack(5 + state.wave);
+      }
+    }
+
+    function endGame() {
+      state.running = false;
+      bgm.pause();
+      finalStats.textContent = `Score ${state.score} · Wave ${state.wave}`;
+      saveScore();
+      gameOverScreen.classList.remove("hidden");
+    }
+
+    function updateHud() {
+      healthBar.style.width = `${clamp(player.hp / player.maxHp, 0, 1) * 100}%`;
+      waveEl.textContent = state.wave;
+      scoreEl.textContent = state.score;
+      ammoEl.textContent = player.reload > 0 ? "Reload" : `${player.ammo}/${player.maxAmmo}`;
+    }
+
+    function draw() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      ctx.clearRect(0, 0, w, h);
+      ctx.save();
+      ctx.translate(-camera.x, -camera.y);
+      drawGround();
+      drawProps();
+      drawPickups();
+      drawBullets();
+      drawZombies();
+      drawPlayer();
+      drawParticles();
+      ctx.restore();
+      drawVignette(w, h);
+    }
+
+    function drawGround() {
+      ctx.fillStyle = "#121a14";
+      ctx.fillRect(0, 0, world.w, world.h);
+      if (mapImage.complete && mapImage.naturalWidth > 0) {
+        ctx.drawImage(mapImage, 0, 0, world.w, world.h);
+        ctx.fillStyle = "rgba(20, 12, 8, 0.14)";
+        ctx.fillRect(0, 0, world.w, world.h);
+      } else {
+        ctx.strokeStyle = "rgba(232,239,221,0.045)";
+        ctx.lineWidth = 1;
+        for (let x = 0; x < world.w; x += 80) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, world.h);
+          ctx.stroke();
+        }
+        for (let y = 0; y < world.h; y += 80) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(world.w, y);
+          ctx.stroke();
+        }
+      }
+      ctx.strokeStyle = "rgba(233,196,106,0.28)";
+      ctx.lineWidth = 5;
+      ctx.strokeRect(6, 6, world.w - 12, world.h - 12);
+    }
+
+    function drawProps() {
+      for (const prop of state.props) {
+        ctx.save();
+        ctx.translate(prop.x, prop.y);
+        ctx.rotate(prop.rot);
+        ctx.fillStyle = prop.shade;
+        ctx.fillRect(-prop.w / 2, -prop.h / 2, prop.w, prop.h);
+        ctx.strokeStyle = "rgba(0,0,0,0.35)";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(-prop.w / 2, -prop.h / 2, prop.w, prop.h);
+        ctx.fillStyle = "rgba(255,255,255,0.06)";
+        ctx.fillRect(-prop.w / 2 + 8, -prop.h / 2 + 8, prop.w - 16, 5);
+        ctx.restore();
+      }
+    }
+
+    function drawPlayer() {
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      ctx.globalAlpha = player.invulnerable > 0 ? 0.62 : 1;
+      ctx.fillStyle = "rgba(0,0,0,0.28)";
+      ctx.beginPath();
+      ctx.ellipse(0, 22, 24, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (playerImage.complete && playerImage.naturalWidth > 0) {
+        const frameW = playerImage.naturalWidth / 4;
+        const frameH = playerImage.naturalHeight / 4;
+        const walkFrame = Math.floor(player.animTime * 9) % 4;
+        const directionRows = { down: 0, up: 1, right: 3, left: 2 };
+        const row = directionRows[player.direction] ?? 0;
+        const col = player.castPulse > 0 && !player.moving ? 3 : player.moving ? walkFrame : 0;
+        const spriteH = 82;
+        const spriteW = spriteH * (frameW / frameH);
+
+        ctx.drawImage(playerImage, col * frameW, row * frameH, frameW, frameH, -spriteW / 2, -spriteH + 34, spriteW, spriteH);
+      } else {
+        ctx.fillStyle = "#f3a4c4";
+        ctx.beginPath();
+        ctx.arc(0, 0, player.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      ctx.font = "700 13px ui-sans-serif, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "rgba(55, 22, 48, 0.72)";
+      ctx.fillStyle = "#fff8ff";
+      ctx.strokeText(player.name, 0, -62);
+      ctx.fillText(player.name, 0, -62);
+      ctx.restore();
+    }
+
+    function drawZombies() {
+      for (const zombie of state.zombies) {
+        const pct = clamp(zombie.hp / zombie.maxHp, 0, 1);
+        ctx.save();
+        ctx.translate(zombie.x, zombie.y);
+        ctx.fillStyle = "rgba(0,0,0,0.22)";
+        ctx.beginPath();
+        ctx.ellipse(0, 14, zombie.r * 1.05, zombie.r * 0.35, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (monsterImage.complete && monsterImage.naturalWidth > 0) {
+          const frameW = monsterImage.naturalWidth / 4;
+          const frameH = monsterImage.naturalHeight / 4;
+          const directionRows = { down: 0, up: 1, right: 2, left: 3 };
+          const row = directionRows[zombie.direction] ?? 0;
+          const col = Math.floor(zombie.animTime * 8) % 4;
+          const spriteH = zombie.r * 3.1;
+          const spriteW = spriteH * (frameW / frameH);
+          ctx.globalAlpha = zombie.hit > 0 ? 0.68 : 1;
+          ctx.drawImage(monsterImage, col * frameW, row * frameH, frameW, frameH, -spriteW / 2, -spriteH + 24, spriteW, spriteH);
+          ctx.globalAlpha = 1;
+        } else {
+          ctx.fillStyle = zombie.hit > 0 ? "#d9ef9f" : "#d7a551";
+          ctx.beginPath();
+          ctx.arc(0, 0, zombie.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.fillRect(zombie.x - 18, zombie.y - zombie.r - 22, 36, 4);
+        ctx.fillStyle = "#f06b59";
+        ctx.fillRect(zombie.x - 18, zombie.y - zombie.r - 22, 36 * pct, 4);
+      }
+    }
+
+    function drawBullets() {
+      for (const bullet of state.bullets) {
+        ctx.save();
+        ctx.translate(bullet.x, bullet.y);
+        ctx.rotate(Math.atan2(bullet.vy, bullet.vx));
+        ctx.shadowColor = "#ff65bc";
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = "#ff65bc";
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#fff2a6";
+        ctx.fillRect(-2, -10, 4, 20);
+        ctx.fillRect(-10, -2, 20, 4);
+        ctx.restore();
+      }
+    }
+
+    function drawPickups() {
+      for (const pickup of state.pickups) {
+        ctx.save();
+        ctx.translate(pickup.x, pickup.y);
+        ctx.rotate(pickup.spin);
+        ctx.fillStyle = pickup.type === "health" ? "#6fd08c" : "#e9c46a";
+        ctx.fillRect(-10, -10, 20, 20);
+        ctx.fillStyle = "#172018";
+        if (pickup.type === "health") {
+          ctx.fillRect(-3, -8, 6, 16);
+          ctx.fillRect(-8, -3, 16, 6);
+        } else {
+          ctx.fillRect(-5, -7, 10, 14);
+        }
+        ctx.restore();
+      }
+    }
+
+    function drawParticles() {
+      for (const p of state.particles) {
+        ctx.globalAlpha = clamp(p.life / p.maxLife, 0, 1);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawVignette(w, h) {
+      const gradient = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.2, w / 2, h / 2, Math.max(w, h) * 0.72);
+      gradient.addColorStop(0, "rgba(0,0,0,0)");
+      gradient.addColorStop(1, "rgba(0,0,0,0.5)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    function loop(now) {
+      if (!state.running) return;
+      const dt = Math.min(0.033, (now - state.last) / 1000);
+      state.last = now;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("resize", resize);
+    window.addEventListener("keydown", (event) => {
+      keys.add(event.code);
+      if (event.code === "KeyR") reload();
+      if (event.code === "Space") event.preventDefault();
+      if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+        event.preventDefault();
+        dash();
+      }
+    });
+    window.addEventListener("keyup", (event) => keys.delete(event.code));
+    window.addEventListener("pointermove", (event) => {
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+    });
+    window.addEventListener("pointerdown", (event) => {
+      pointer.down = true;
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+    });
+    window.addEventListener("pointerup", () => {
+      pointer.down = false;
+    });
+
+    function releaseTouchButton(button) {
+      const key = button.dataset.key;
+      if (key) keys.delete(key);
+      button.classList.remove("is-down");
+    }
+
+    for (const button of touchButtons) {
+      button.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        button.setPointerCapture(event.pointerId);
+        const key = button.dataset.key;
+        if (key) keys.add(key);
+        if (button.dataset.tap === "dash") dash();
+        button.classList.add("is-down");
+      });
+
+      button.addEventListener("pointerup", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        releaseTouchButton(button);
+      });
+
+      button.addEventListener("pointercancel", () => releaseTouchButton(button));
+      button.addEventListener("lostpointercapture", () => releaseTouchButton(button));
+    }
+
+    function updateJoystick(event) {
+      const rect = joystick.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const max = rect.width * 0.34;
+      const dx = event.clientX - centerX;
+      const dy = event.clientY - centerY;
+      const dist = Math.hypot(dx, dy);
+      const clamped = Math.min(dist, max);
+      const nx = dist ? dx / dist : 0;
+      const ny = dist ? dy / dist : 0;
+      joystickState.x = (nx * clamped) / max;
+      joystickState.y = (ny * clamped) / max;
+      stick.style.transform = `translate(calc(-50% + ${nx * clamped}px), calc(-50% + ${ny * clamped}px))`;
+    }
+
+    function resetJoystick() {
+      joystickState.active = false;
+      joystickState.x = 0;
+      joystickState.y = 0;
+      joystickState.pointerId = null;
+      stick.style.transform = "translate(-50%, -50%)";
+    }
+
+    joystick.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      joystick.setPointerCapture(event.pointerId);
+      joystickState.active = true;
+      joystickState.pointerId = event.pointerId;
+      updateJoystick(event);
+    });
+
+    window.addEventListener("pointermove", (event) => {
+      if (!joystickState.active || joystickState.pointerId !== event.pointerId) return;
+      event.preventDefault();
+      event.stopPropagation();
+      updateJoystick(event);
+    });
+
+    window.addEventListener("pointerup", (event) => {
+      if (joystickState.pointerId !== event.pointerId) return;
+      event.preventDefault();
+      event.stopPropagation();
+      resetJoystick();
+    });
+
+    joystick.addEventListener("pointercancel", resetJoystick);
+    joystick.addEventListener("lostpointercapture", resetJoystick);
+
+    startButton.addEventListener("click", resetGame);
+    restartButton.addEventListener("click", resetGame);
+    nicknameInput.value = localStorage.getItem("dead-block-run-name") || "";
+    renderLeaderboard();
+    resize();
+    draw();
+  </script>
+</body>
+</html>
