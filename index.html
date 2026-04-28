@@ -425,6 +425,9 @@
     const pointer = { x: 0, y: 0, down: false };
     const joystickState = { active: false, x: 0, y: 0, pointerId: null };
     const leaderboardKey = "dead-block-run-leaderboard";
+    const supabaseUrl = "https://dmlqjfdmskbmvyoxkcfb.supabase.co";
+    const supabaseKey = "sb_publishable_gzzIPnzNNN5WfgAXyg_LxQ_hwc6olW5";
+    const scoresEndpoint = `${supabaseUrl}/rest/v1/scores`;
     const world = { w: 2200, h: 2200 };
     const camera = { x: 0, y: 0 };
 const walls =     [
@@ -1488,6 +1491,16 @@ const walls =     [
       return (value || "").trim().slice(0, 14) || "Player";
     }
 
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;",
+      }[char]));
+    }
+
     function loadLeaderboard() {
       try {
         const entries = JSON.parse(localStorage.getItem(leaderboardKey) || "[]");
@@ -1497,23 +1510,74 @@ const walls =     [
       }
     }
 
-    function saveScore() {
+    async function fetchOnlineLeaderboard() {
+      const params = new URLSearchParams({
+        select: "nickname,score,wave,created_at",
+        order: "score.desc,wave.desc,created_at.asc",
+        limit: "10",
+      });
+      const response = await fetch(`${scoresEndpoint}?${params}`, {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      });
+      if (!response.ok) throw new Error(`Leaderboard fetch failed: ${response.status}`);
+      const entries = await response.json();
+      return entries.map((entry) => ({
+        name: entry.nickname,
+        score: Number(entry.score) || 0,
+        wave: Number(entry.wave) || 1,
+        date: new Date(entry.created_at).getTime() || Date.now(),
+      }));
+    }
+
+    async function uploadOnlineScore(entry) {
+      const response = await fetch(scoresEndpoint, {
+        method: "POST",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          nickname: entry.name,
+          score: entry.score,
+          wave: entry.wave,
+        }),
+      });
+      if (!response.ok) throw new Error(`Score upload failed: ${response.status}`);
+    }
+
+    async function saveScore() {
       const entries = loadLeaderboard();
-      entries.push({
+      const entry = {
         name: player.name,
         score: state.score,
         wave: state.wave,
         date: Date.now(),
-      });
+      };
+      entries.push(entry);
       entries.sort((a, b) => b.score - a.score || b.wave - a.wave || a.date - b.date);
       localStorage.setItem(leaderboardKey, JSON.stringify(entries.slice(0, 10)));
+      try {
+        await uploadOnlineScore(entry);
+      } catch {
+        // Local save already happened, so the score is not lost if the network fails.
+      }
       renderLeaderboard();
     }
 
-    function renderLeaderboard() {
-      const entries = loadLeaderboard();
+    async function renderLeaderboard() {
+      let entries = loadLeaderboard();
+      try {
+        entries = await fetchOnlineLeaderboard();
+      } catch {
+        // Offline or Supabase setup issue: keep the game playable with local scores.
+      }
       leaderboardList.innerHTML = entries.length
-        ? entries.map((entry) => `<li>${entry.name} · ${entry.score} · W${entry.wave}</li>`).join("")
+        ? entries.map((entry) => `<li>${escapeHtml(entry.name)} · ${entry.score} · W${entry.wave}</li>`).join("")
         : "<li>첫 기록을 기다리는 중</li>";
     }
 
