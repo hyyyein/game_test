@@ -655,6 +655,7 @@
     const keys = new Set();
     const pointer = { x: 0, y: 0, down: false };
     const joystickState = { active: false, x: 0, y: 0, pointerId: null };
+    const inputDeadZone = 0.08;
     const leaderboardKey = "dead-block-run-leaderboard";
     const supabaseUrl = "https://dmlqjfdmskbmvyoxkcfb.supabase.co";
     const supabaseKey = "sb_publishable_gzzIPnzNNN5WfgAXyg_LxQ_hwc6olW5";
@@ -1991,14 +1992,46 @@ const walls =     [
       }
     }
 
-    function aimFromVector(x, y) {
-      if (Math.hypot(x, y) < 0.08) return;
+    function vectorActive(vector) {
+      return Math.hypot(vector.x, vector.y) >= inputDeadZone;
+    }
+
+    function directionFromVector(x, y) {
       player.angle = Math.atan2(y, x);
       if (Math.abs(x) > Math.abs(y)) {
         player.direction = x > 0 ? "right" : "left";
       } else {
         player.direction = y > 0 ? "down" : "up";
       }
+    }
+
+    function aimFromVector(x, y) {
+      if (Math.hypot(x, y) < inputDeadZone) return false;
+      directionFromVector(x, y);
+      return true;
+    }
+
+    function getMoveVector() {
+      const move = { x: 0, y: 0 };
+      if (keys.has("KeyW") || keys.has("ArrowUp")) move.y -= 1;
+      if (keys.has("KeyS") || keys.has("ArrowDown")) move.y += 1;
+      if (keys.has("KeyA") || keys.has("ArrowLeft")) move.x -= 1;
+      if (keys.has("KeyD") || keys.has("ArrowRight")) move.x += 1;
+      if (joystickState.active && vectorActive(joystickState)) {
+        move.x += joystickState.x;
+        move.y += joystickState.y;
+      }
+      return move;
+    }
+
+    function getPointerAimVector() {
+      const rect = canvas.getBoundingClientRect();
+      const targetX = camera.x + pointer.x - rect.left;
+      const targetY = camera.y + pointer.y - rect.top;
+      return {
+        x: targetX - player.x,
+        y: targetY - player.y,
+      };
     }
 
     function dash() {
@@ -2026,10 +2059,6 @@ const walls =     [
     }
 
     function update(dt) {
-      if (joystickState.active) aimFromVector(joystickState.x, joystickState.y);
-      if (pointer.down || keys.has("Space")) shoot();
-      if (player.ammo === 0) reload();
-
       const wasReloading = player.reload > 0;
       player.fireCooldown = Math.max(0, player.fireCooldown - dt);
       player.reload = Math.max(0, player.reload - dt);
@@ -2039,20 +2068,25 @@ const walls =     [
       player.castPulse = Math.max(0, player.castPulse - dt);
       if (wasReloading && player.reload === 0) player.ammo = player.maxAmmo;
 
-      const move = { x: 0, y: 0 };
-      if (keys.has("KeyW") || keys.has("ArrowUp")) move.y -= 1;
-      if (keys.has("KeyS") || keys.has("ArrowDown")) move.y += 1;
-      if (keys.has("KeyA") || keys.has("ArrowLeft")) move.x -= 1;
-      if (keys.has("KeyD") || keys.has("ArrowRight")) move.x += 1;
-      move.x += joystickState.x;
-      move.y += joystickState.y;
-      const len = Math.hypot(move.x, move.y) || 1;
+      const move = getMoveVector();
+      const moveLen = Math.hypot(move.x, move.y);
       const dashBoost = player.dash > 0 ? 2.7 : 1;
-      player.moving = move.x !== 0 || move.y !== 0;
+      const shooting = pointer.down || keys.has("Space");
+      player.moving = moveLen > 0;
       if (player.moving) {
         player.animTime += dt * dashBoost;
+      }
+      if (joystickState.active && vectorActive(joystickState)) {
+        aimFromVector(joystickState.x, joystickState.y);
+      } else if (pointer.down) {
+        const pointerAim = getPointerAimVector();
+        aimFromVector(pointerAim.x, pointerAim.y);
+      } else if (player.moving) {
         aimFromVector(move.x, move.y);
       }
+      if (shooting) shoot();
+      if (player.ammo === 0) reload();
+      const len = moveLen || 1;
       moveActor(player, (move.x / len) * player.speed * dashBoost * dt, (move.y / len) * player.speed * dashBoost * dt, player.r);
 
       state.spawnTimer -= dt;
@@ -2471,7 +2505,7 @@ const walls =     [
       const ny = dist ? dy / dist : 0;
       joystickState.x = (nx * clamped) / max;
       joystickState.y = (ny * clamped) / max;
-      if (state.running) aimFromVector(joystickState.x, joystickState.y);
+      if (state.running && vectorActive(joystickState)) aimFromVector(joystickState.x, joystickState.y);
       stick.style.transform = `translate(calc(-50% + ${nx * clamped}px), calc(-50% + ${ny * clamped}px))`;
     }
 
