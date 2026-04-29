@@ -474,7 +474,7 @@
       height: 118px;
       margin: 0;
       background-repeat: no-repeat;
-      background-size: 400% 400%;
+      background-size: 400% 800%;
       background-position: 0 0;
       filter: drop-shadow(0 8px 12px rgba(35, 18, 42, 0.28));
     }
@@ -699,14 +699,13 @@
         src: "assets/player-4dir-spritesheet.png",
         bullet: "magic",
         frameCols: 4,
-        frameRows: 4,
+        frameRows: 8,
         spriteH: 82,
         nameY: -72,
-        rows: { down: 0, up: 1, right: 3, left: 2 },
+        rows: { down: 0, up: 4, right: 2, left: 6 },
+        angleRows: [2, 1, 0, 7, 6, 5, 4, 3],
         flips: {},
-        cropByRow: {
-          2: { bottom: 42 },
-        },
+        cropByRow: {},
       },
       pistol: {
         src: "assets/player-gun-spritesheet.png",
