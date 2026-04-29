@@ -194,6 +194,13 @@
       line-height: 1.5;
     }
 
+    .start-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     button {
       min-width: 150px;
       min-height: 44px;
@@ -410,6 +417,18 @@
       text-shadow: 0 2px 8px rgba(32, 14, 34, 0.46);
     }
 
+    .score-screen {
+      width: min(640px, calc(100vw - 32px));
+    }
+
+    .score-screen h1 {
+      margin-bottom: 22px;
+    }
+
+    .score-screen .leaderboard {
+      margin-bottom: 24px;
+    }
+
     .character-select {
       width: min(560px, calc(100vw - 32px));
     }
@@ -589,7 +608,16 @@
     <h1>루이에게서 살아남기</h1>
     <p>사나운 루이를 빨리 처치해.<br>웨이브가 올라갈수록 더 빠르고 더 많이 올거야.</p>
     <input class="name-input" id="nicknameInput" maxlength="14" placeholder="닉네임" autocomplete="nickname">
-    <button id="startButton">Start Run</button>
+    <div class="start-actions">
+      <button id="startButton">Start Run</button>
+      <button id="scoreboardButton" type="button">점수판</button>
+    </div>
+  </section>
+
+  <section class="banner score-screen hidden" id="scoreScreen">
+    <h1>점수판</h1>
+    <ol class="leaderboard" id="mainLeaderboardList"></ol>
+    <button id="closeScoreButton" type="button">닫기</button>
   </section>
 
   <section class="banner character-select hidden" id="characterSelectScreen">
@@ -635,9 +663,13 @@
     const gameOverScreen = document.querySelector("#gameOverScreen");
     const finalStats = document.querySelector("#finalStats");
     const startButton = document.querySelector("#startButton");
+    const scoreboardButton = document.querySelector("#scoreboardButton");
+    const closeScoreButton = document.querySelector("#closeScoreButton");
     const restartButton = document.querySelector("#restartButton");
     const nicknameInput = document.querySelector("#nicknameInput");
     const leaderboardList = document.querySelector("#leaderboardList");
+    const mainLeaderboardList = document.querySelector("#mainLeaderboardList");
+    const scoreScreen = document.querySelector("#scoreScreen");
     const characterCards = document.querySelectorAll(".character-card");
     const touchButtons = document.querySelectorAll(".touch-btn");
     const joystick = document.querySelector("#joystick");
@@ -1834,14 +1866,8 @@ const walls =     [
       renderLeaderboard();
     }
 
-    async function renderLeaderboard() {
-      let entries = loadLeaderboard();
-      try {
-        entries = await fetchOnlineLeaderboard();
-      } catch {
-        // Offline or Supabase setup issue: keep the game playable with local scores.
-      }
-      leaderboardList.innerHTML = entries.length
+    function paintLeaderboard(target, entries) {
+      target.innerHTML = entries.length
         ? entries.slice(0, 10).map((entry, index) => {
             const rank = index + 1;
             return `<li class="rank-row">
@@ -1854,6 +1880,17 @@ const walls =     [
             </li>`;
           }).join("")
         : `<li class="rank-empty">첫 기록을 기다리는 중</li>`;
+    }
+
+    async function renderLeaderboard() {
+      let entries = loadLeaderboard();
+      try {
+        entries = await fetchOnlineLeaderboard();
+      } catch {
+        // Offline or Supabase setup issue: keep the game playable with local scores.
+      }
+      paintLeaderboard(leaderboardList, entries);
+      paintLeaderboard(mainLeaderboardList, entries);
     }
 
     function circleHitsRect(x, y, r, rect) {
@@ -1934,6 +1971,7 @@ const walls =     [
       state.props = makeProps();
       spawnPack(5);
       startScreen.classList.add("hidden");
+      scoreScreen.classList.add("hidden");
       characterSelectScreen.classList.add("hidden");
       gameOverScreen.classList.add("hidden");
       updateHud();
@@ -2211,6 +2249,7 @@ const walls =     [
       bgm.pause();
       finalStats.textContent = `Score ${state.score} · Wave ${state.wave}`;
       saveScore();
+      scoreScreen.classList.add("hidden");
       gameOverScreen.classList.remove("hidden");
     }
 
@@ -2547,7 +2586,17 @@ const walls =     [
       nicknameInput.value = cleanName(nicknameInput.value);
       localStorage.setItem("dead-block-run-name", nicknameInput.value);
       startScreen.classList.add("hidden");
+      scoreScreen.classList.add("hidden");
       characterSelectScreen.classList.remove("hidden");
+    });
+    scoreboardButton.addEventListener("click", () => {
+      renderLeaderboard();
+      startScreen.classList.add("hidden");
+      scoreScreen.classList.remove("hidden");
+    });
+    closeScoreButton.addEventListener("click", () => {
+      scoreScreen.classList.add("hidden");
+      if (!state.running) startScreen.classList.remove("hidden");
     });
     for (const card of characterCards) {
       card.addEventListener("click", () => {
