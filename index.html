@@ -152,15 +152,31 @@
     }
 
     .game-over {
-      width: min(540px, calc(100vw - 28px));
+      width: min(840px, calc(100vw - 56px));
+      max-height: min(680px, calc(100vh - 56px));
+      padding: clamp(28px, 5vw, 48px) clamp(30px, 8vw, 72px) 42px;
+      overflow: auto;
       background:
-        radial-gradient(circle at 20% 14%, rgba(255, 230, 248, 0.24), transparent 36%),
-        linear-gradient(135deg, rgba(52, 30, 58, 0.76), rgba(82, 55, 72, 0.64) 52%, rgba(45, 53, 78, 0.7)),
-        rgba(28, 20, 34, 0.7);
+        radial-gradient(circle at 24% 16%, rgba(255, 245, 231, 0.32), transparent 38%),
+        linear-gradient(135deg, rgba(255, 246, 229, 0.2), rgba(255, 189, 222, 0.1) 46%, rgba(168, 221, 255, 0.1)),
+        rgba(79, 55, 46, 0.28);
       box-shadow:
-        0 18px 42px rgba(14, 8, 20, 0.44),
-        inset 0 1px 0 rgba(255, 255, 255, 0.48),
-        inset 0 -1px 0 rgba(255, 156, 215, 0.18);
+        0 16px 34px rgba(46, 28, 24, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5),
+        inset 0 -1px 0 rgba(255, 214, 178, 0.14);
+      backdrop-filter: blur(8px) saturate(1.06);
+    }
+
+    .banner.game-over h1 {
+      margin-bottom: 18px;
+      font-size: clamp(48px, 7vw, 72px);
+    }
+
+    .banner.game-over p {
+      margin-bottom: 30px;
+      color: #ffd1ec;
+      font-size: clamp(20px, 3vw, 28px);
+      font-weight: 800;
     }
 
     .banner h1 {
@@ -313,103 +329,85 @@
 
     .leaderboard {
       display: grid;
-      gap: 8px;
-      max-width: 440px;
-      margin: 14px auto 18px;
+      gap: 3px;
+      width: min(560px, 100%);
+      margin: 0 auto 32px;
       padding: 0;
       color: var(--text);
       list-style: none;
-      text-align: initial;
+      text-align: center;
+      font-size: clamp(20px, 2.5vw, 25px);
+      font-weight: 800;
+      line-height: 1.2;
     }
 
     .rank-row {
       display: grid;
-      grid-template-columns: 42px minmax(0, 1fr) auto;
-      align-items: center;
-      gap: 10px;
-      min-height: 50px;
-      padding: 8px 10px;
-      border: 1px solid rgba(255, 255, 255, 0.38);
-      border-radius: 8px;
-      background:
-        linear-gradient(135deg, rgba(255, 244, 252, 0.24), rgba(255, 168, 220, 0.13), rgba(162, 220, 255, 0.15)),
-        rgba(255, 255, 255, 0.12);
-      box-shadow:
-        0 8px 18px rgba(16, 8, 28, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.48);
+      grid-template-columns: 56px minmax(128px, 1fr) 18px 104px 18px 56px;
+      align-items: baseline;
+      column-gap: 0;
+      min-height: 0;
+      width: min(560px, 100%);
+      margin: 0 auto;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
     }
 
-    .rank-row.top-1 {
-      border-color: rgba(255, 229, 142, 0.78);
-      background:
-        linear-gradient(135deg, rgba(255, 237, 168, 0.34), rgba(255, 191, 221, 0.2), rgba(255, 255, 255, 0.16)),
-        rgba(80, 54, 28, 0.3);
-    }
-
-    .rank-row.top-2 {
-      border-color: rgba(224, 238, 255, 0.68);
-    }
-
-    .rank-row.top-3 {
-      border-color: rgba(255, 188, 126, 0.68);
-    }
-
-    .rank-badge {
-      display: grid;
-      place-items: center;
-      width: 38px;
-      height: 38px;
-      border: 1px solid rgba(255, 255, 255, 0.64);
-      border-radius: 50%;
-      color: #5b3351;
-      font-size: 16px;
+    .rank-number {
+      color: #ff8fe6;
       font-weight: 900;
-      background: linear-gradient(145deg, #ffe7a1, #f5b84c);
-      box-shadow:
-        0 6px 10px rgba(35, 18, 42, 0.24),
-        inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    }
-
-    .rank-badge.rank-2 {
-      background: linear-gradient(145deg, #ffffff, #b9cce1);
-    }
-
-    .rank-badge.rank-3 {
-      background: linear-gradient(145deg, #ffd39f, #c47a42);
+      text-align: right;
+      text-shadow: 0 2px 8px rgba(64, 26, 50, 0.36);
+      white-space: nowrap;
     }
 
     .rank-name {
       min-width: 0;
       overflow: hidden;
       color: #fff8ff;
-      font-size: 17px;
+      font-size: inherit;
       font-weight: 900;
-      line-height: 1.2;
+      text-align: left;
       text-overflow: ellipsis;
-      text-shadow: 0 2px 8px rgba(32, 14, 34, 0.55);
+      text-shadow: 0 2px 8px rgba(32, 14, 34, 0.46);
+      white-space: nowrap;
+    }
+
+    .rank-separator {
+      color: #fff8ff;
+      font-weight: 900;
+      text-align: center;
+      text-shadow: 0 2px 8px rgba(32, 14, 34, 0.46);
       white-space: nowrap;
     }
 
     .rank-score {
-      min-width: 86px;
-      padding: 7px 10px;
-      border: 1px solid rgba(255, 255, 255, 0.42);
-      border-radius: 8px;
-      background: rgba(255, 248, 255, 0.18);
-      color: #ffe5f7;
-      font-size: 16px;
+      color: #fff8ff;
+      font-size: inherit;
       font-weight: 900;
-      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
       text-align: right;
-      text-shadow: 0 2px 8px rgba(32, 14, 34, 0.55);
+      text-shadow: 0 2px 8px rgba(32, 14, 34, 0.46);
       white-space: nowrap;
     }
 
     .rank-wave {
-      display: block;
-      margin-top: 3px;
-      color: #cfeaff;
-      font-size: 11px;
+      color: #fff8ff;
+      font-size: inherit;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      text-align: left;
+      text-shadow: 0 2px 8px rgba(32, 14, 34, 0.46);
+      white-space: nowrap;
+    }
+
+    .rank-empty {
+      color: #fff8ff;
+      text-align: center;
+      text-shadow: 0 2px 8px rgba(32, 14, 34, 0.46);
     }
 
     .character-select {
@@ -419,11 +417,19 @@
     .character-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      justify-content: center;
+      align-items: center;
       gap: 12px;
+      width: 100%;
       margin-top: 16px;
     }
 
     .character-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
       min-width: 0;
       min-height: 190px;
       padding: 12px;
@@ -447,7 +453,7 @@
     .character-preview {
       width: 112px;
       height: 118px;
-      margin: 0 auto 10px;
+      margin: 0;
       background-repeat: no-repeat;
       background-size: 400% 400%;
       background-position: 0 0;
@@ -524,34 +530,31 @@
       }
 
       .game-over {
-        padding: 16px;
+        width: min(520px, calc(100vw - 24px));
+        max-height: calc(100vh - 24px);
+        padding: 22px 24px 28px;
+      }
+
+      .banner.game-over h1 {
+        margin-bottom: 12px;
+        font-size: 40px;
+      }
+
+      .banner.game-over p {
+        margin-bottom: 22px;
+        font-size: 18px;
       }
 
       .leaderboard {
-        gap: 6px;
+        gap: 3px;
+        width: min(330px, 100%);
+        margin-bottom: 22px;
+        font-size: 17px;
       }
 
       .rank-row {
-        grid-template-columns: 34px minmax(0, 1fr) auto;
-        gap: 7px;
-        min-height: 44px;
-        padding: 7px;
-      }
-
-      .rank-badge {
-        width: 31px;
-        height: 31px;
-        font-size: 14px;
-      }
-
-      .rank-name {
-        font-size: 14px;
-      }
-
-      .rank-score {
-        min-width: 68px;
-        padding: 6px 7px;
-        font-size: 13px;
+        grid-template-columns: 38px minmax(88px, 1fr) 12px 66px 12px 38px;
+        width: min(330px, 100%);
       }
 
     }
@@ -662,10 +665,24 @@
       magic: {
         src: "assets/player-4dir-spritesheet.png",
         bullet: "magic",
+        spriteH: 82,
+        nameY: -72,
+        rows: { down: 0, up: 1, right: 3, left: 2 },
+        flips: {},
+        cropByRow: {
+          2: { bottom: 42 },
+        },
       },
       pistol: {
         src: "assets/player-gun-spritesheet.png",
         bullet: "pistol",
+        spriteH: 94,
+        nameY: -78,
+        rows: { down: 0, up: 1, right: 2, left: 2 },
+        flips: { right: true },
+        cropByRow: {
+          2: { bottom: 64 },
+        },
       },
     };
     let selectedCharacter = localStorage.getItem("dead-block-run-character") || "pistol";
@@ -1826,17 +1843,18 @@ const walls =     [
         // Offline or Supabase setup issue: keep the game playable with local scores.
       }
       leaderboardList.innerHTML = entries.length
-        ? entries.map((entry, index) => {
+        ? entries.slice(0, 10).map((entry, index) => {
             const rank = index + 1;
-            const topClass = rank <= 3 ? ` top-${rank}` : "";
-            const badgeClass = rank <= 3 ? ` rank-${rank}` : "";
-            return `<li class="rank-row${topClass}">
-              <span class="rank-badge${badgeClass}">${rank}</span>
+            return `<li class="rank-row">
+              <span class="rank-number">${rank}.</span>
               <span class="rank-name">${escapeHtml(entry.name)}</span>
-              <span class="rank-score">${entry.score}<span class="rank-wave">W${entry.wave}</span></span>
+              <span class="rank-separator">·</span>
+              <span class="rank-score">${entry.score}</span>
+              <span class="rank-separator">·</span>
+              <span class="rank-wave">W${entry.wave}</span>
             </li>`;
           }).join("")
-        : "<li>첫 기록을 기다리는 중</li>";
+        : `<li class="rank-empty">첫 기록을 기다리는 중</li>`;
     }
 
     function circleHitsRect(x, y, r, rect) {
@@ -1915,7 +1933,7 @@ const walls =     [
         pickups: [],
       });
       state.props = makeProps();
-      spawnPack(7);
+      spawnPack(5);
       startScreen.classList.add("hidden");
       characterSelectScreen.classList.add("hidden");
       gameOverScreen.classList.add("hidden");
@@ -2042,7 +2060,7 @@ const walls =     [
       state.spawnTimer -= dt;
       if (state.spawnTimer <= 0) {
         spawnZombie();
-        state.spawnTimer = Math.max(0.32, 1.35 - state.wave * 0.08);
+        state.spawnTimer = Math.max(0.9, 2.0 - state.wave * 0.08);
       }
 
       for (const bullet of state.bullets) {
@@ -2152,7 +2170,7 @@ const walls =     [
         player.maxAmmo = Math.min(42, player.maxAmmo + 2);
         player.ammo = player.maxAmmo;
         player.hp = Math.min(player.maxHp, player.hp + 18);
-        spawnPack(5 + state.wave);
+        spawnPack(2 + Math.ceil(state.wave / 2));
       }
     }
 
@@ -2236,6 +2254,7 @@ const walls =     [
       ctx.save();
       ctx.translate(player.x, player.y);
       ctx.globalAlpha = player.invulnerable > 0 ? 0.62 : 1;
+      const spriteConfig = characters[player.character] || characters.pistol;
       ctx.fillStyle = "rgba(0,0,0,0.28)";
       ctx.beginPath();
       ctx.ellipse(0, 22, 24, 9, 0, 0, Math.PI * 2);
@@ -2245,13 +2264,23 @@ const walls =     [
         const frameW = playerImage.naturalWidth / 4;
         const frameH = playerImage.naturalHeight / 4;
         const walkFrame = Math.floor(player.animTime * 9) % 4;
-        const directionRows = { down: 0, up: 1, right: 3, left: 2 };
-        const row = directionRows[player.direction] ?? 0;
+        const row = spriteConfig.rows[player.direction] ?? 0;
         const col = player.castPulse > 0 && !player.moving ? 3 : player.moving ? walkFrame : 0;
-        const spriteH = player.character === "pistol" ? 94 : 82;
-        const spriteW = spriteH * (frameW / frameH);
+        const crop = spriteConfig.cropByRow[row] || {};
+        const sourceX = col * frameW + (crop.left || 0);
+        const sourceY = row * frameH + (crop.top || 0);
+        const sourceW = frameW - (crop.left || 0) - (crop.right || 0);
+        const sourceH = frameH - (crop.top || 0) - (crop.bottom || 0);
+        const scale = spriteConfig.spriteH / frameH;
+        const spriteW = sourceW * scale;
+        const spriteH = sourceH * scale;
+        const spriteY = -spriteConfig.spriteH + 34 + (crop.top || 0) * scale;
+        const flipX = spriteConfig.flips[player.direction];
 
-        ctx.drawImage(playerImage, col * frameW, row * frameH, frameW, frameH, -spriteW / 2, -spriteH + 34, spriteW, spriteH);
+        ctx.save();
+        if (flipX) ctx.scale(-1, 1);
+        ctx.drawImage(playerImage, sourceX, sourceY, sourceW, sourceH, -spriteW / 2, spriteY, spriteW, spriteH);
+        ctx.restore();
       } else {
         ctx.fillStyle = "#f3a4c4";
         ctx.beginPath();
@@ -2265,8 +2294,8 @@ const walls =     [
       ctx.lineWidth = 4;
       ctx.strokeStyle = "rgba(55, 22, 48, 0.72)";
       ctx.fillStyle = "#fff8ff";
-      ctx.strokeText(player.name, 0, -62);
-      ctx.fillText(player.name, 0, -62);
+      ctx.strokeText(player.name, 0, spriteConfig.nameY);
+      ctx.fillText(player.name, 0, spriteConfig.nameY);
       ctx.restore();
     }
 
