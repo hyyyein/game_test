@@ -624,11 +624,11 @@
     <h1>캐릭터 선택</h1>
     <div class="character-grid">
       <button class="character-card" data-character="magic" aria-label="핑크 마법소녀 선택">
-        <div class="character-preview" style="background-image: url('assets/player-4dir-spritesheet.png?v=8dir-clean-20260429b')"></div>
+        <div class="character-preview" style="background-image: url('assets/player-4dir-spritesheet.png?v=8dir-aligned-20260429c')"></div>
         <span>마법소녀</span>
       </button>
       <button class="character-card" data-character="pistol" aria-label="권총 캐릭터 선택">
-        <div class="character-preview" style="background-image: url('assets/player-gun-spritesheet.png?v=8dir-clean-20260429b')"></div>
+        <div class="character-preview" style="background-image: url('assets/player-gun-spritesheet.png?v=8dir-aligned-20260429c')"></div>
         <span>권총소녀</span>
       </button>
     </div>
@@ -675,7 +675,7 @@
     const joystick = document.querySelector("#joystick");
     const stick = document.querySelector("#stick");
     const playerImage = new Image();
-    playerImage.src = "assets/player-gun-spritesheet.png?v=8dir-clean-20260429b";
+    playerImage.src = "assets/player-gun-spritesheet.png?v=8dir-aligned-20260429c";
     const monsterImage = new Image();
     monsterImage.src = "assets/monster-dog-spritesheet.png";
     const mapImage = new Image();
@@ -696,7 +696,7 @@
     const camera = { x: 0, y: 0 };
     const characters = {
       magic: {
-        src: "assets/player-4dir-spritesheet.png?v=8dir-clean-20260429b",
+        src: "assets/player-4dir-spritesheet.png?v=8dir-aligned-20260429c",
         bullet: "magic",
         frameCols: 4,
         frameRows: 8,
@@ -704,12 +704,11 @@
         nameY: -82,
         rows: { down: 0, up: 4, right: 2, left: 6 },
         angleRows: [2, 1, 0, 7, 6, 5, 4, 3],
-        angleFlips: [true, true, false, false, false, false, false, true],
         flips: {},
         cropByRow: {},
       },
       pistol: {
-        src: "assets/player-gun-spritesheet.png?v=8dir-clean-20260429b",
+        src: "assets/player-gun-spritesheet.png?v=8dir-aligned-20260429c",
         bullet: "pistol",
         frameCols: 4,
         frameRows: 8,
@@ -717,7 +716,6 @@
         nameY: -90,
         rows: { down: 0, up: 4, right: 2, left: 6 },
         angleRows: [2, 1, 0, 7, 6, 5, 4, 3],
-        angleFlips: [true, true, false, false, false, false, false, true],
         flips: {},
         cropByRow: {},
       },
@@ -2069,7 +2067,7 @@ const walls =     [
       const index = Math.floor(((normalized + sector / 2) % fullTurn) / sector);
       return {
         row: spriteConfig.angleRows[index] ?? 0,
-        flipX: Boolean(spriteConfig.angleFlips?.[index]),
+        flipX: false,
       };
     }
 
