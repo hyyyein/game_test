@@ -471,11 +471,9 @@
 
     .character-preview {
       width: 136px;
-      height: 130px;
+      height: 136px;
       margin: 0;
-      background-repeat: no-repeat;
-      background-size: 400% 800%;
-      background-position: 0 0;
+      object-fit: contain;
       filter: drop-shadow(0 8px 12px rgba(35, 18, 42, 0.28));
     }
 
@@ -545,7 +543,7 @@
 
       .character-preview {
         width: 118px;
-        height: 124px;
+        height: 118px;
       }
 
       .game-over {
@@ -624,11 +622,11 @@
     <h1>캐릭터 선택</h1>
     <div class="character-grid">
       <button class="character-card" data-character="magic" aria-label="핑크 마법소녀 선택">
-        <div class="character-preview" style="background-image: url('assets/player-4dir-spritesheet.png?v=8dir-aligned-20260429c')"></div>
+        <img class="character-preview" src="assets/player-4dir-preview.png?v=preview-20260429a" alt="">
         <span>마법소녀</span>
       </button>
       <button class="character-card" data-character="pistol" aria-label="권총 캐릭터 선택">
-        <div class="character-preview" style="background-image: url('assets/player-gun-spritesheet.png?v=8dir-aligned-20260429c')"></div>
+        <img class="character-preview" src="assets/player-gun-preview.png?v=preview-20260429a" alt="">
         <span>권총소녀</span>
       </button>
     </div>
