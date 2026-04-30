@@ -1984,6 +1984,7 @@ const walls =     [
       waveKills: 0,
       nextWaveKills: 10,
       spawnTimer: 0,
+      bossWave: 0,
       pausedForLevelUp: false,
       levelChoices: [],
       particles: [],
@@ -2376,6 +2377,7 @@ const walls =     [
         waveKills: 0,
         nextWaveKills: 10,
         spawnTimer: 0,
+        bossWave: 0,
         pausedForLevelUp: false,
         levelChoices: [],
         particles: [],
@@ -2412,16 +2414,104 @@ const walls =     [
       return findOpenPointAround(player.x, player.y, 680, 920, clearRadius) || { x: world.w / 2, y: 220 };
     }
 
-    function spawnZombie() {
-      const radius = rand(15, 23);
+    const zombieTypes = {
+      normal: {
+        hp: 1,
+        speed: 1,
+        damage: 13,
+        radius: [15, 23],
+        score: 1,
+        xp: 1,
+        waveValue: 1,
+        tint: null,
+        aura: null,
+      },
+      fast: {
+        hp: 0.72,
+        speed: 1.58,
+        damage: 10,
+        radius: [13, 18],
+        score: 1.15,
+        xp: 1,
+        waveValue: 1,
+        tint: "rgba(110, 220, 255, 0.34)",
+        aura: "#7adfff",
+      },
+      tank: {
+        hp: 2.25,
+        speed: 0.72,
+        damage: 18,
+        radius: [24, 31],
+        score: 1.65,
+        xp: 2,
+        waveValue: 2,
+        tint: "rgba(255, 196, 91, 0.36)",
+        aura: "#ffd071",
+      },
+      charger: {
+        hp: 1.12,
+        speed: 1.06,
+        damage: 16,
+        radius: [18, 24],
+        score: 1.45,
+        xp: 1,
+        waveValue: 1,
+        tint: "rgba(255, 111, 148, 0.34)",
+        aura: "#ff6f94",
+        charge: true,
+      },
+      boss: {
+        hp: 7.2,
+        speed: 0.58,
+        damage: 25,
+        radius: [38, 44],
+        score: 5,
+        xp: 5,
+        waveValue: 5,
+        tint: "rgba(255, 117, 218, 0.42)",
+        aura: "#ff75da",
+        boss: true,
+      },
+    };
+
+    function chooseZombieType() {
+      const r = Math.random();
+      const chargerChance = state.wave >= 8 ? Math.min(0.08 + state.wave * 0.01, 0.2) : 0;
+      const tankChance = state.wave >= 6 ? Math.min(0.08 + state.wave * 0.012, 0.26) : 0;
+      const fastChance = state.wave >= 4 ? Math.min(0.16 + state.wave * 0.012, 0.34) : 0;
+      if (r < chargerChance) return "charger";
+      if (r < chargerChance + tankChance) return "tank";
+      if (r < chargerChance + tankChance + fastChance) return "fast";
+      return "normal";
+    }
+
+    function spawnZombie(forcedType) {
+      const type = forcedType || chooseZombieType();
+      const spec = zombieTypes[type] || zombieTypes.normal;
+      const radius = rand(spec.radius[0], spec.radius[1]);
       const point = getSpawnPoint(radius);
+      const baseHp = 42 + state.wave * 8;
+      const baseSpeed = rand(58, 84) + state.wave * 5;
       const z = {
         x: point.x,
         y: point.y,
         r: radius,
-        hp: 42 + state.wave * 8,
-        maxHp: 42 + state.wave * 8,
-        speed: rand(58, 84) + state.wave * 5,
+        type,
+        hp: Math.round(baseHp * spec.hp),
+        maxHp: Math.round(baseHp * spec.hp),
+        speed: baseSpeed * spec.speed,
+        damage: spec.damage,
+        scoreMult: spec.score,
+        xpValue: spec.xp,
+        waveValue: spec.waveValue,
+        tint: spec.tint,
+        aura: spec.aura,
+        isBoss: Boolean(spec.boss),
+        chargeEnabled: Boolean(spec.charge),
+        chargeCooldown: rand(1.2, 2.7),
+        chargeTimer: 0,
+        chargeVx: 0,
+        chargeVy: 0,
         hit: 0,
         sway: rand(0, Math.PI * 2),
         stuck: 0,
@@ -2433,6 +2523,12 @@ const walls =     [
 
     function spawnPack(count) {
       for (let i = 0; i < count; i++) spawnZombie();
+    }
+
+    function maybeSpawnBoss() {
+      if (state.wave % 5 !== 0 || state.bossWave === state.wave) return;
+      state.bossWave = state.wave;
+      spawnZombie("boss");
     }
 
     function shoot() {
@@ -2593,6 +2689,7 @@ const walls =     [
         spawnZombie();
         state.spawnTimer = Math.max(0.9, 2.0 - state.wave * 0.08);
       }
+      maybeSpawnBoss();
 
       for (const bullet of state.bullets) {
         bullet.x += bullet.vx * dt;
@@ -2604,11 +2701,23 @@ const walls =     [
       for (const zombie of state.zombies) {
         zombie.hit = Math.max(0, zombie.hit - dt);
         zombie.sway += dt * 3;
-        const angle = Math.atan2(player.y - zombie.y, player.x - zombie.x) + Math.sin(zombie.sway) * 0.08;
-        const vx = Math.cos(angle);
-        const vy = Math.sin(angle);
-        const moved = moveActor(zombie, vx * zombie.speed * dt, vy * zombie.speed * dt, zombie.r * 0.85);
-        if (moved < zombie.speed * dt * 0.22) {
+        const baseAngle = Math.atan2(player.y - zombie.y, player.x - zombie.x);
+        const playerDistance = distance(zombie, player);
+        zombie.chargeCooldown = Math.max(0, zombie.chargeCooldown - dt);
+        if (zombie.chargeEnabled && zombie.chargeTimer <= 0 && zombie.chargeCooldown <= 0 && playerDistance > 130 && playerDistance < 560) {
+          zombie.chargeTimer = 0.42;
+          zombie.chargeCooldown = rand(2.35, 3.25);
+          zombie.chargeVx = Math.cos(baseAngle);
+          zombie.chargeVy = Math.sin(baseAngle);
+          puff(zombie.x, zombie.y, zombie.aura || "#ff6f94", 8, 115);
+        }
+        zombie.chargeTimer = Math.max(0, zombie.chargeTimer - dt);
+        const angle = zombie.chargeTimer > 0 ? Math.atan2(zombie.chargeVy, zombie.chargeVx) : baseAngle + Math.sin(zombie.sway) * 0.08;
+        const vx = zombie.chargeTimer > 0 ? zombie.chargeVx : Math.cos(angle);
+        const vy = zombie.chargeTimer > 0 ? zombie.chargeVy : Math.sin(angle);
+        const speedMult = zombie.chargeTimer > 0 ? 2.75 : 1;
+        const moved = moveActor(zombie, vx * zombie.speed * speedMult * dt, vy * zombie.speed * speedMult * dt, zombie.r * 0.85);
+        if (moved < zombie.speed * speedMult * dt * 0.22) {
           zombie.stuck += dt;
           const side = Math.sin(zombie.sway * 1.7) > 0 ? 1 : -1;
           const slideX = -vy * side;
@@ -2625,7 +2734,7 @@ const walls =     [
         } else {
           zombie.stuck = 0;
         }
-        zombie.animTime += dt;
+        zombie.animTime += dt * (zombie.chargeTimer > 0 ? 1.7 : 1);
         if (Math.abs(vx) > Math.abs(vy)) {
           zombie.direction = vx > 0 ? "right" : "left";
         } else {
@@ -2633,7 +2742,7 @@ const walls =     [
         }
 
         if (distance(zombie, player) < zombie.r + player.r && player.invulnerable <= 0) {
-          player.hp -= 13;
+          player.hp -= zombie.damage || 13;
           player.invulnerable = 0.55;
           zombie.x -= Math.cos(angle) * 36;
           zombie.y -= Math.sin(angle) * 36;
@@ -2686,12 +2795,13 @@ const walls =     [
     }
 
     function killZombie(zombie) {
-      state.score += 100 + state.wave * 12;
-      state.waveKills += 1;
-      awardXp(1);
-      puff(zombie.x, zombie.y, "#587747", 18, 180);
+      state.score += Math.round((100 + state.wave * 12) * (zombie.scoreMult || 1));
+      state.waveKills += zombie.waveValue || 1;
+      awardXp(zombie.xpValue || 1);
+      puff(zombie.x, zombie.y, zombie.aura || "#587747", zombie.isBoss ? 42 : 18, zombie.isBoss ? 260 : 180);
       const canUpgradeShot = player.projectileCount < player.maxProjectileCount;
-      if (canUpgradeShot && Math.random() < 0.12) {
+      const splitChance = zombie.isBoss ? 0.35 : 0.12;
+      if (canUpgradeShot && Math.random() < splitChance) {
         state.pickups.push({
           x: zombie.x,
           y: zombie.y,
@@ -2699,11 +2809,11 @@ const walls =     [
           spin: 0,
           life: 10,
         });
-      } else if (Math.random() < 0.16) {
+      } else if (zombie.isBoss || Math.random() < 0.16) {
         state.pickups.push({
           x: zombie.x,
           y: zombie.y,
-          type: Math.random() < 0.45 ? "health" : "ammo",
+          type: zombie.isBoss || Math.random() < 0.45 ? "health" : "ammo",
           spin: 0,
           life: 9.5,
         });
@@ -2862,6 +2972,23 @@ const walls =     [
         ctx.beginPath();
         ctx.ellipse(0, 14, zombie.r * 1.05, zombie.r * 0.35, 0, 0, Math.PI * 2);
         ctx.fill();
+        if (zombie.aura) {
+          ctx.globalAlpha = zombie.chargeTimer > 0 ? 0.82 : 0.48;
+          ctx.strokeStyle = zombie.aura;
+          ctx.lineWidth = zombie.isBoss ? 4 : 2;
+          ctx.beginPath();
+          ctx.arc(0, 0, zombie.r + (zombie.isBoss ? 7 : 4), 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+        if (zombie.chargeTimer > 0) {
+          ctx.strokeStyle = zombie.aura || "#ff6f94";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(-zombie.chargeVx * zombie.r * 0.3, -zombie.chargeVy * zombie.r * 0.3);
+          ctx.lineTo(zombie.chargeVx * zombie.r * 1.6, zombie.chargeVy * zombie.r * 1.6);
+          ctx.stroke();
+        }
 
         if (monsterImage.complete && monsterImage.naturalWidth > 0) {
           const frameW = monsterImage.naturalWidth / 4;
@@ -2875,16 +3002,18 @@ const walls =     [
           ctx.drawImage(monsterImage, col * frameW, row * frameH, frameW, frameH, -spriteW / 2, -spriteH + 24, spriteW, spriteH);
           ctx.globalAlpha = 1;
         } else {
-          ctx.fillStyle = zombie.hit > 0 ? "#d9ef9f" : "#d7a551";
+          ctx.fillStyle = zombie.hit > 0 ? "#d9ef9f" : zombie.aura || "#d7a551";
           ctx.beginPath();
           ctx.arc(0, 0, zombie.r, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.restore();
+        const barW = clamp(zombie.r * 2.6, 36, 84);
+        const barY = zombie.y - zombie.r - (zombie.isBoss ? 31 : 22);
         ctx.fillStyle = "rgba(0,0,0,0.35)";
-        ctx.fillRect(zombie.x - 18, zombie.y - zombie.r - 22, 36, 4);
-        ctx.fillStyle = "#f06b59";
-        ctx.fillRect(zombie.x - 18, zombie.y - zombie.r - 22, 36 * pct, 4);
+        ctx.fillRect(zombie.x - barW / 2, barY, barW, 4);
+        ctx.fillStyle = zombie.isBoss ? "#ff75da" : zombie.type === "tank" ? "#ffd071" : zombie.type === "fast" ? "#7adfff" : "#f06b59";
+        ctx.fillRect(zombie.x - barW / 2, barY, barW * pct, 4);
       }
     }
 
