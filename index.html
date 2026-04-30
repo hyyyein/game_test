@@ -2526,10 +2526,10 @@ const walls =     [
         charge: true,
       },
       boss: {
-        hp: 7.2,
-        speed: 0.58,
-        damage: 25,
-        radius: [38, 44],
+        hp: 14.5,
+        speed: 0.52,
+        damage: 30,
+        radius: [44, 50],
         score: 5,
         xp: 5,
         waveValue: 5,
@@ -3094,10 +3094,10 @@ const walls =     [
           const directionRows = { down: 0, up: 1, right: 2, left: 3 };
           const row = directionRows[zombie.direction] ?? 0;
           const col = Math.floor(zombie.animTime * 8) % 4;
-          const spriteH = zombie.r * (zombie.isBoss ? 5.1 : 3.1);
+          const spriteH = zombie.r * (zombie.isBoss ? 5.8 : 3.1);
           const spriteW = spriteH * (frameW / frameH);
           ctx.globalAlpha = zombie.hit > 0 ? 0.68 : 1;
-          ctx.drawImage(zombieImage, col * frameW, row * frameH, frameW, frameH, -spriteW / 2, -spriteH + (zombie.isBoss ? 58 : 24), spriteW, spriteH);
+          ctx.drawImage(zombieImage, col * frameW, row * frameH, frameW, frameH, -spriteW / 2, -spriteH + (zombie.isBoss ? 66 : 24), spriteW, spriteH);
           ctx.globalAlpha = 1;
         } else {
           ctx.fillStyle = zombie.hit > 0 ? "#d9ef9f" : zombie.aura || "#d7a551";
@@ -3107,9 +3107,9 @@ const walls =     [
         }
         ctx.restore();
         const barW = clamp(zombie.r * 2.6, 36, 84);
-        const barY = zombie.y - zombie.r - (zombie.isBoss ? 31 : 22);
+        const barY = zombie.isBoss ? zombie.y - zombie.r * 2.85 : zombie.y - zombie.r - 22;
         if (zombie.isBoss) {
-          const nameY = zombie.y - zombie.r * 5.0;
+          const nameY = zombie.y - zombie.r * 3.8;
           ctx.save();
           ctx.font = "900 16px ui-sans-serif, system-ui, sans-serif";
           ctx.textAlign = "center";
