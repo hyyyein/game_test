@@ -3108,6 +3108,19 @@ const walls =     [
         ctx.restore();
         const barW = clamp(zombie.r * 2.6, 36, 84);
         const barY = zombie.y - zombie.r - (zombie.isBoss ? 31 : 22);
+        if (zombie.isBoss) {
+          const nameY = zombie.y - zombie.r * 3.35;
+          ctx.save();
+          ctx.font = "900 16px ui-sans-serif, system-ui, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          ctx.lineWidth = 5;
+          ctx.strokeStyle = "rgba(38, 12, 40, 0.88)";
+          ctx.fillStyle = "#ffd7f2";
+          ctx.strokeText("루이보스", zombie.x, nameY);
+          ctx.fillText("루이보스", zombie.x, nameY);
+          ctx.restore();
+        }
         ctx.fillStyle = "rgba(0,0,0,0.35)";
         ctx.fillRect(zombie.x - barW / 2, barY, barW, 4);
         ctx.fillStyle = zombie.isBoss ? "#ff75da" : zombie.type === "tank" ? "#ffd071" : zombie.type === "fast" ? "#7adfff" : "#f06b59";
