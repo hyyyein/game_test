@@ -124,7 +124,7 @@
 
     .bar {
       position: relative;
-      width: 132px;
+      width: 104px;
       height: 8px;
       margin-top: 7px;
       overflow: hidden;
@@ -139,6 +139,16 @@
       border-radius: inherit;
       background: linear-gradient(90deg, var(--good), var(--accent-blue), var(--accent));
       box-shadow: 0 0 12px rgba(255, 159, 214, 0.55);
+    }
+
+    .xp-bar {
+      height: 5px;
+      margin-top: 5px;
+    }
+
+    .xp-bar span {
+      background: linear-gradient(90deg, #ff8fe6, #ffd77e, #a8ddff);
+      box-shadow: 0 0 10px rgba(255, 215, 126, 0.48);
     }
 
     .help {
@@ -684,6 +694,11 @@
         margin-top: 6px;
       }
 
+      .xp-bar {
+        height: 4px;
+        margin-top: 4px;
+      }
+
       .help {
         display: none;
       }
@@ -806,6 +821,7 @@
       <div class="pill">
         <span class="label">Level</span>
         <span class="value" id="level">1</span>
+        <div class="bar xp-bar"><span id="xpBar"></span></div>
       </div>
       <div class="pill">
         <span class="label">Score</span>
@@ -885,6 +901,7 @@
     const canvas = document.querySelector("#game");
     const ctx = canvas.getContext("2d");
     const healthBar = document.querySelector("#healthBar");
+    const xpBar = document.querySelector("#xpBar");
     const waveEl = document.querySelector("#wave");
     const levelEl = document.querySelector("#level");
     const scoreEl = document.querySelector("#score");
@@ -914,6 +931,8 @@
     playerImage.src = "assets/player-gun-spritesheet.png?v=8dir-aligned-20260429c";
     const monsterImage = new Image();
     monsterImage.src = "assets/monster-dog-spritesheet.png";
+    const bossMonsterImage = new Image();
+    bossMonsterImage.src = "assets/monster-dog-boss-spritesheet.png?v=boss-20260501a";
     const mapImage = new Image();
     mapImage.src = "assets/map-texture.png";
     const bgm = new Audio("assets/bgm.mp3");
@@ -1985,6 +2004,7 @@ const walls =     [
       nextWaveKills: 10,
       spawnTimer: 0,
       bossWave: 0,
+      bossAlertTimer: 0,
       pausedForLevelUp: false,
       levelChoices: [],
       particles: [],
@@ -2011,6 +2031,11 @@ const walls =     [
       spreadAngle: 0.16,
       damageMultiplier: 1,
       fireDelay: 0.105,
+      pickupRadius: 34,
+      magnetRadius: 112,
+      pierce: 0,
+      critChance: 0.05,
+      critDamage: 1.75,
       name: "Player",
       reload: 0,
       fireCooldown: 0,
@@ -2055,6 +2080,40 @@ const walls =     [
         isAvailable: () => player.fireDelay > 0.068,
         apply: () => {
           player.fireDelay = Math.max(0.068, player.fireDelay * 0.9);
+        },
+      },
+      {
+        id: "pierce",
+        title: "관통+",
+        description: "탄환 관통 +1",
+        icon: "➤",
+        tone: "blue",
+        isAvailable: () => player.pierce < 3,
+        apply: () => {
+          player.pierce = Math.min(3, player.pierce + 1);
+        },
+      },
+      {
+        id: "critical",
+        title: "치명+",
+        description: "크리티컬 확률 +8%",
+        icon: "※",
+        tone: "gold",
+        isAvailable: () => player.critChance < 0.38,
+        apply: () => {
+          player.critChance = Math.min(0.38, player.critChance + 0.08);
+        },
+      },
+      {
+        id: "magnet",
+        title: "자석+",
+        description: "아이템 획득 범위 증가",
+        icon: "◌",
+        tone: "pink",
+        isAvailable: () => player.magnetRadius < 260,
+        apply: () => {
+          player.pickupRadius = Math.min(64, player.pickupRadius + 8);
+          player.magnetRadius = Math.min(260, player.magnetRadius + 42);
         },
       },
       {
@@ -2351,6 +2410,11 @@ const walls =     [
         spreadAngle: 0.16,
         damageMultiplier: 1,
         fireDelay: 0.105,
+        pickupRadius: 34,
+        magnetRadius: 112,
+        pierce: 0,
+        critChance: 0.05,
+        critDamage: 1.75,
         name: cleanName(nicknameInput.value),
         reload: 0,
         dash: 0,
@@ -2378,6 +2442,7 @@ const walls =     [
         nextWaveKills: 10,
         spawnTimer: 0,
         bossWave: 0,
+        bossAlertTimer: 0,
         pausedForLevelUp: false,
         levelChoices: [],
         particles: [],
@@ -2528,6 +2593,7 @@ const walls =     [
     function maybeSpawnBoss() {
       if (state.wave % 5 !== 0 || state.bossWave === state.wave) return;
       state.bossWave = state.wave;
+      state.bossAlertTimer = 2.2;
       spawnZombie("boss");
     }
 
@@ -2546,13 +2612,17 @@ const walls =     [
         const lane = count === 1 ? 0 : (i - (count - 1) / 2) * 5;
         const muzzleX = player.x + Math.cos(angle) * 42 - Math.sin(angle) * lane;
         const muzzleY = player.y + Math.sin(angle) * 42 + Math.cos(angle) * lane;
+        const baseDamage = Math.round((damageByCount[count] || 21) * player.damageMultiplier);
+        const crit = Math.random() < player.critChance;
         state.bullets.push({
           x: muzzleX,
           y: muzzleY,
           vx: Math.cos(angle) * 860,
           vy: Math.sin(angle) * 860,
           life: 0.78,
-          damage: Math.round((damageByCount[count] || 21) * player.damageMultiplier),
+          damage: crit ? Math.round(baseDamage * player.critDamage) : baseDamage,
+          pierce: player.pierce,
+          crit,
           style: player.bulletStyle,
         });
       }
@@ -2661,6 +2731,7 @@ const walls =     [
       player.dashCooldown = Math.max(0, player.dashCooldown - dt);
       player.invulnerable = Math.max(0, player.invulnerable - dt);
       player.castPulse = Math.max(0, player.castPulse - dt);
+      state.bossAlertTimer = Math.max(0, state.bossAlertTimer - dt);
       if (wasReloading && player.reload === 0) player.ammo = player.maxAmmo;
 
       const move = getMoveVector();
@@ -2756,10 +2827,15 @@ const walls =     [
           if (zombie.hp <= 0 || distance(bullet, zombie) > zombie.r + 4) continue;
           zombie.hp -= bullet.damage;
           zombie.hit = 0.1;
-          bullet.life = 0;
-          puff(bullet.x, bullet.y, "#9acd6e", 6, 130);
+          if (bullet.pierce > 0) {
+            bullet.pierce -= 1;
+            bullet.life = Math.max(0, bullet.life - 0.08);
+          } else {
+            bullet.life = 0;
+          }
+          puff(bullet.x, bullet.y, bullet.crit ? "#ffd77e" : "#9acd6e", bullet.crit ? 11 : 6, bullet.crit ? 185 : 130);
           if (zombie.hp <= 0) killZombie(zombie);
-          break;
+          if (bullet.life <= 0) break;
         }
       }
 
@@ -2767,14 +2843,21 @@ const walls =     [
 
       for (const pickup of state.pickups) {
         pickup.spin += dt * 4;
-        if (distance(pickup, player) < 34) {
+        const pickupDistance = distance(pickup, player);
+        if (pickupDistance < player.magnetRadius && pickupDistance > player.pickupRadius) {
+          const pull = Math.min(pickupDistance, (260 + player.magnetRadius * 1.2) * dt);
+          pickup.x += ((player.x - pickup.x) / pickupDistance) * pull;
+          pickup.y += ((player.y - pickup.y) / pickupDistance) * pull;
+        }
+        if (distance(pickup, player) < player.pickupRadius) {
+          if (pickup.type === "xp") awardXp(pickup.amount || 1);
           if (pickup.type === "health") player.hp = Math.min(player.maxHp, player.hp + 24);
           if (pickup.type === "ammo") player.ammo = player.maxAmmo;
           if (pickup.type === "split") {
             player.projectileCount = Math.min(player.maxProjectileCount, player.projectileCount + 1);
           }
           pickup.life = 0;
-          const pickupColor = pickup.type === "health" ? "#6fd08c" : pickup.type === "split" ? "#ff8fe6" : "#e9c46a";
+          const pickupColor = pickup.type === "health" ? "#6fd08c" : pickup.type === "split" ? "#ff8fe6" : pickup.type === "xp" ? "#8fe6ff" : "#e9c46a";
           puff(pickup.x, pickup.y, pickupColor, pickup.type === "split" ? 22 : 12, pickup.type === "split" ? 190 : 125);
         }
         pickup.life -= dt;
@@ -2797,8 +2880,15 @@ const walls =     [
     function killZombie(zombie) {
       state.score += Math.round((100 + state.wave * 12) * (zombie.scoreMult || 1));
       state.waveKills += zombie.waveValue || 1;
-      awardXp(zombie.xpValue || 1);
       puff(zombie.x, zombie.y, zombie.aura || "#587747", zombie.isBoss ? 42 : 18, zombie.isBoss ? 260 : 180);
+      state.pickups.push({
+        x: zombie.x + rand(-10, 10),
+        y: zombie.y + rand(-10, 10),
+        type: "xp",
+        amount: zombie.xpValue || 1,
+        spin: 0,
+        life: zombie.isBoss ? 26 : 22,
+      });
       const canUpgradeShot = player.projectileCount < player.maxProjectileCount;
       const splitChance = zombie.isBoss ? 0.35 : 0.12;
       if (canUpgradeShot && Math.random() < splitChance) {
@@ -2832,6 +2922,7 @@ const walls =     [
     function endGame() {
       state.running = false;
       state.pausedForLevelUp = false;
+      state.bossAlertTimer = 0;
       bgm.pause();
       finalStats.textContent = `Score ${state.score} · Wave ${state.wave}`;
       saveScore();
@@ -2841,8 +2932,13 @@ const walls =     [
       gameOverScreen.classList.remove("hidden");
     }
 
+    function getActiveBoss() {
+      return state.zombies.find((zombie) => zombie.isBoss && zombie.hp > 0) || null;
+    }
+
     function updateHud() {
       healthBar.style.width = `${clamp(player.hp / player.maxHp, 0, 1) * 100}%`;
+      xpBar.style.width = `${clamp(state.xp / state.nextXp, 0, 1) * 100}%`;
       waveEl.textContent = state.wave;
       levelEl.textContent = state.level;
       scoreEl.textContent = state.score;
@@ -2864,6 +2960,7 @@ const walls =     [
       drawParticles();
       ctx.restore();
       drawVignette(w, h);
+      drawBossOverlay(w, h);
     }
 
     function drawGround() {
@@ -2990,16 +3087,17 @@ const walls =     [
           ctx.stroke();
         }
 
-        if (monsterImage.complete && monsterImage.naturalWidth > 0) {
-          const frameW = monsterImage.naturalWidth / 4;
-          const frameH = monsterImage.naturalHeight / 4;
+        const zombieImage = zombie.isBoss && bossMonsterImage.complete && bossMonsterImage.naturalWidth > 0 ? bossMonsterImage : monsterImage;
+        if (zombieImage.complete && zombieImage.naturalWidth > 0) {
+          const frameW = zombieImage.naturalWidth / 4;
+          const frameH = zombieImage.naturalHeight / 4;
           const directionRows = { down: 0, up: 1, right: 2, left: 3 };
           const row = directionRows[zombie.direction] ?? 0;
           const col = Math.floor(zombie.animTime * 8) % 4;
-          const spriteH = zombie.r * 3.1;
+          const spriteH = zombie.r * (zombie.isBoss ? 5.1 : 3.1);
           const spriteW = spriteH * (frameW / frameH);
           ctx.globalAlpha = zombie.hit > 0 ? 0.68 : 1;
-          ctx.drawImage(monsterImage, col * frameW, row * frameH, frameW, frameH, -spriteW / 2, -spriteH + 24, spriteW, spriteH);
+          ctx.drawImage(zombieImage, col * frameW, row * frameH, frameW, frameH, -spriteW / 2, -spriteH + (zombie.isBoss ? 58 : 24), spriteW, spriteH);
           ctx.globalAlpha = 1;
         } else {
           ctx.fillStyle = zombie.hit > 0 ? "#d9ef9f" : zombie.aura || "#d7a551";
@@ -3022,21 +3120,25 @@ const walls =     [
         ctx.save();
         ctx.translate(bullet.x, bullet.y);
         ctx.rotate(Math.atan2(bullet.vy, bullet.vx));
+        if (bullet.crit) {
+          ctx.shadowColor = "#ffd77e";
+          ctx.shadowBlur = 18;
+        }
         if (bullet.style === "pistol") {
-          ctx.shadowColor = "#ffc95a";
-          ctx.shadowBlur = 10;
+          ctx.shadowColor = bullet.crit ? "#ffd77e" : "#ffc95a";
+          ctx.shadowBlur = bullet.crit ? 18 : 10;
           ctx.fillStyle = "rgba(255, 185, 70, 0.3)";
-          ctx.fillRect(-18, -2, 18, 4);
-          ctx.fillStyle = "#ffe08a";
-          ctx.fillRect(-4, -3, 14, 6);
+          ctx.fillRect(-18 - bullet.pierce * 3, -2, 18 + bullet.pierce * 3, 4);
+          ctx.fillStyle = bullet.crit ? "#fff2a6" : "#ffe08a";
+          ctx.fillRect(-4, -3, 14 + bullet.pierce * 2, 6);
           ctx.fillStyle = "#fff8d6";
           ctx.fillRect(6, -2, 5, 4);
         } else {
-          ctx.shadowColor = "#ff65bc";
-          ctx.shadowBlur = 12;
-          ctx.fillStyle = "#ff65bc";
+          ctx.shadowColor = bullet.crit ? "#ffd77e" : "#ff65bc";
+          ctx.shadowBlur = bullet.crit ? 18 : 12;
+          ctx.fillStyle = bullet.crit ? "#ffd77e" : "#ff65bc";
           ctx.beginPath();
-          ctx.arc(0, 0, 5, 0, Math.PI * 2);
+          ctx.arc(0, 0, 5 + bullet.pierce, 0, Math.PI * 2);
           ctx.fill();
           ctx.fillStyle = "#fff2a6";
           ctx.fillRect(-2, -10, 4, 20);
@@ -3070,6 +3172,21 @@ const walls =     [
           ctx.fillStyle = "#172018";
           ctx.fillRect(-3, -8, 6, 16);
           ctx.fillRect(-8, -3, 16, 6);
+        } else if (pickup.type === "xp") {
+          ctx.shadowColor = "#8fe6ff";
+          ctx.shadowBlur = 12;
+          ctx.fillStyle = "#8fe6ff";
+          ctx.beginPath();
+          ctx.moveTo(0, -13);
+          ctx.lineTo(12, 0);
+          ctx.lineTo(0, 13);
+          ctx.lineTo(-12, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = "#fff8ff";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
         } else if (pickup.type === "split") {
           ctx.shadowColor = "#ff8fe6";
           ctx.shadowBlur = 16;
@@ -3119,6 +3236,54 @@ const walls =     [
       gradient.addColorStop(1, "rgba(0,0,0,0.5)");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, w, h);
+    }
+
+    function drawBossOverlay(w, h) {
+      const boss = getActiveBoss();
+      if (boss) {
+        const barW = Math.min(460, w - 36);
+        const x = (w - barW) / 2;
+        const y = w <= 720 ? 64 : 86;
+        const pct = clamp(boss.hp / boss.maxHp, 0, 1);
+        ctx.save();
+        ctx.fillStyle = "rgba(24, 8, 28, 0.72)";
+        ctx.strokeStyle = "rgba(255, 117, 218, 0.78)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(x, y, barW, 16, 8);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "rgba(255, 117, 218, 0.92)";
+        ctx.beginPath();
+        ctx.roundRect(x + 3, y + 3, Math.max(0, (barW - 6) * pct), 10, 5);
+        ctx.fill();
+        ctx.font = "900 12px ui-sans-serif, system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "rgba(38, 12, 40, 0.82)";
+        ctx.fillStyle = "#fff8ff";
+        ctx.strokeText("BOSS LOUI", w / 2, y - 5);
+        ctx.fillText("BOSS LOUI", w / 2, y - 5);
+        ctx.restore();
+      }
+
+      if (state.bossAlertTimer > 0) {
+        const t = clamp(state.bossAlertTimer / 2.2, 0, 1);
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, t * 1.4);
+        ctx.fillStyle = `rgba(255, 80, 180, ${0.12 + 0.18 * Math.sin(t * Math.PI)})`;
+        ctx.fillRect(0, 0, w, h);
+        ctx.font = `900 ${w <= 720 ? 34 : 46}px ui-sans-serif, system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = "rgba(36, 8, 42, 0.82)";
+        ctx.fillStyle = "#ffd7f2";
+        ctx.strokeText("BOSS WAVE", w / 2, h * 0.22);
+        ctx.fillText("BOSS WAVE", w / 2, h * 0.22);
+        ctx.restore();
+      }
     }
 
     function loop(now) {
