@@ -832,7 +832,7 @@
         <span class="value" id="ammo">24</span>
       </div>
     </div>
-    <div class="help">WASD/조이스틱 이동, 클릭 또는 Space로 사격. R로 재장전, Shift로 짧은 회피.</div>
+    <div class="help">PC: WASD 이동, 클릭/Space 사격. 모바일: 조이스틱 이동, 자동사격. R 재장전, Shift/✦ 회피.</div>
   </div>
 
   <section class="banner" id="startScreen">
@@ -892,8 +892,7 @@
       <div class="stick" id="stick"></div>
     </div>
     <div class="actions">
-      <button class="touch-btn dash" data-tap="dash" aria-label="Dash">✦</button>
-      <button class="touch-btn fire" data-key="Space" aria-label="Fire">★</button>
+      <button class="touch-btn fire" data-tap="dash" aria-label="Dash">✦</button>
     </div>
   </div>
 
@@ -2695,6 +2694,24 @@ const walls =     [
       };
     }
 
+    function isMobileCombatMode() {
+      return window.matchMedia("(max-width: 720px)").matches;
+    }
+
+    function findNearestZombie() {
+      let nearest = null;
+      let nearestDistance = Infinity;
+      for (const zombie of state.zombies) {
+        if (zombie.hp <= 0) continue;
+        const d = distance(player, zombie);
+        if (d < nearestDistance) {
+          nearest = zombie;
+          nearestDistance = d;
+        }
+      }
+      return nearest;
+    }
+
     function dash() {
       if (player.dashCooldown > 0) return;
       player.dash = 0.16;
@@ -2737,14 +2754,18 @@ const walls =     [
       const move = getMoveVector();
       const moveLen = Math.hypot(move.x, move.y);
       const dashBoost = player.dash > 0 ? 2.7 : 1;
-      const shooting = pointer.down || keys.has("Space");
+      const mobileCombat = isMobileCombatMode();
+      const targetZombie = mobileCombat ? findNearestZombie() : null;
+      const shooting = mobileCombat ? Boolean(targetZombie) : pointer.down || keys.has("Space");
       player.moving = moveLen > 0;
       if (player.moving) {
         player.animTime += dt * dashBoost;
       }
-      if (joystickState.active && vectorActive(joystickState)) {
+      if (targetZombie) {
+        aimFromVector(targetZombie.x - player.x, targetZombie.y - player.y);
+      } else if (!mobileCombat && joystickState.active && vectorActive(joystickState)) {
         aimFromVector(joystickState.x, joystickState.y);
-      } else if (pointer.down) {
+      } else if (!mobileCombat && pointer.down) {
         const pointerAim = getPointerAimVector();
         aimFromVector(pointerAim.x, pointerAim.y);
       } else if (player.moving) {
@@ -3324,6 +3345,7 @@ const walls =     [
       pointer.y = event.clientY;
     });
     window.addEventListener("pointerdown", (event) => {
+      if (isMobileCombatMode()) return;
       pointer.down = true;
       pointer.x = event.clientX;
       pointer.y = event.clientY;
@@ -3372,7 +3394,9 @@ const walls =     [
       const ny = dist ? dy / dist : 0;
       joystickState.x = (nx * clamped) / max;
       joystickState.y = (ny * clamped) / max;
-      if (state.running && vectorActive(joystickState)) aimFromVector(joystickState.x, joystickState.y);
+      if (!isMobileCombatMode() && state.running && vectorActive(joystickState)) {
+        aimFromVector(joystickState.x, joystickState.y);
+      }
       stick.style.transform = `translate(calc(-50% + ${nx * clamped}px), calc(-50% + ${ny * clamped}px))`;
     }
 
