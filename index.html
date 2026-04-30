@@ -1744,6 +1744,9 @@ const walls =     [
       invulnerable: 0,
       ammo: 24,
       maxAmmo: 24,
+      projectileCount: 1,
+      maxProjectileCount: 4,
+      spreadAngle: 0.16,
       name: "Player",
       reload: 0,
       fireCooldown: 0,
@@ -1942,6 +1945,10 @@ const walls =     [
         y: world.h / 2,
         hp: 100,
         ammo: 24,
+        maxAmmo: 24,
+        projectileCount: 1,
+        maxProjectileCount: 4,
+        spreadAngle: 0.16,
         name: cleanName(nicknameInput.value),
         reload: 0,
         dash: 0,
@@ -2012,19 +2019,28 @@ const walls =     [
       player.ammo -= 1;
       player.fireCooldown = 0.105;
       player.castPulse = 0.2;
-      const spread = rand(-0.04, 0.04);
-      const angle = player.angle + spread;
-      state.bullets.push({
-        x: player.x + Math.cos(angle) * 42,
-        y: player.y + Math.sin(angle) * 42,
-        vx: Math.cos(angle) * 860,
-        vy: Math.sin(angle) * 860,
-        life: 0.78,
-        damage: 34,
-        style: player.bulletStyle,
-      });
+      const count = clamp(Math.round(player.projectileCount), 1, player.maxProjectileCount);
+      const damageByCount = [0, 34, 28, 24, 21];
+      const arc = player.spreadAngle * (count - 1);
+      const start = -arc / 2;
+      for (let i = 0; i < count; i++) {
+        const offset = count === 1 ? 0 : start + player.spreadAngle * i;
+        const angle = player.angle + offset + rand(-0.025, 0.025);
+        const lane = count === 1 ? 0 : (i - (count - 1) / 2) * 5;
+        const muzzleX = player.x + Math.cos(angle) * 42 - Math.sin(angle) * lane;
+        const muzzleY = player.y + Math.sin(angle) * 42 + Math.cos(angle) * lane;
+        state.bullets.push({
+          x: muzzleX,
+          y: muzzleY,
+          vx: Math.cos(angle) * 860,
+          vy: Math.sin(angle) * 860,
+          life: 0.78,
+          damage: damageByCount[count] || 21,
+          style: player.bulletStyle,
+        });
+      }
       const sparkColor = player.bulletStyle === "pistol" ? "#ffc95a" : "#ff65bc";
-      puff(player.x + Math.cos(angle) * 46, player.y + Math.sin(angle) * 46, sparkColor, 6, 220);
+      puff(player.x + Math.cos(player.angle) * 46, player.y + Math.sin(player.angle) * 46, sparkColor, 6 + count, 220);
     }
 
     function reload() {
@@ -2220,8 +2236,12 @@ const walls =     [
         if (distance(pickup, player) < 34) {
           if (pickup.type === "health") player.hp = Math.min(player.maxHp, player.hp + 24);
           if (pickup.type === "ammo") player.ammo = player.maxAmmo;
+          if (pickup.type === "split") {
+            player.projectileCount = Math.min(player.maxProjectileCount, player.projectileCount + 1);
+          }
           pickup.life = 0;
-          puff(pickup.x, pickup.y, pickup.type === "health" ? "#6fd08c" : "#e9c46a", 12, 125);
+          const pickupColor = pickup.type === "health" ? "#6fd08c" : pickup.type === "split" ? "#ff8fe6" : "#e9c46a";
+          puff(pickup.x, pickup.y, pickupColor, pickup.type === "split" ? 22 : 12, pickup.type === "split" ? 190 : 125);
         }
         pickup.life -= dt;
       }
@@ -2244,7 +2264,16 @@ const walls =     [
       state.score += 100 + state.wave * 12;
       state.waveKills += 1;
       puff(zombie.x, zombie.y, "#587747", 18, 180);
-      if (Math.random() < 0.16) {
+      const canUpgradeShot = player.projectileCount < player.maxProjectileCount;
+      if (canUpgradeShot && Math.random() < 0.12) {
+        state.pickups.push({
+          x: zombie.x,
+          y: zombie.y,
+          type: "split",
+          spin: 0,
+          life: 10,
+        });
+      } else if (Math.random() < 0.16) {
         state.pickups.push({
           x: zombie.x,
           y: zombie.y,
@@ -2278,7 +2307,7 @@ const walls =     [
       healthBar.style.width = `${clamp(player.hp / player.maxHp, 0, 1) * 100}%`;
       waveEl.textContent = state.wave;
       scoreEl.textContent = state.score;
-      ammoEl.textContent = player.reload > 0 ? "Reload" : `${player.ammo}/${player.maxAmmo}`;
+      ammoEl.textContent = player.reload > 0 ? "Reload" : `${player.ammo}/${player.maxAmmo}${player.projectileCount > 1 ? ` x${player.projectileCount}` : ""}`;
     }
 
     function draw() {
@@ -2459,18 +2488,56 @@ const walls =     [
       }
     }
 
+    function drawStar(cx, cy, points, outerRadius, innerRadius) {
+      ctx.beginPath();
+      for (let i = 0; i < points * 2; i++) {
+        const radius = i % 2 === 0 ? outerRadius : innerRadius;
+        const angle = -Math.PI / 2 + (i * Math.PI) / points;
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    }
+
     function drawPickups() {
       for (const pickup of state.pickups) {
         ctx.save();
         ctx.translate(pickup.x, pickup.y);
         ctx.rotate(pickup.spin);
-        ctx.fillStyle = pickup.type === "health" ? "#6fd08c" : "#e9c46a";
-        ctx.fillRect(-10, -10, 20, 20);
-        ctx.fillStyle = "#172018";
         if (pickup.type === "health") {
+          ctx.fillStyle = "#6fd08c";
+          ctx.fillRect(-10, -10, 20, 20);
+          ctx.fillStyle = "#172018";
           ctx.fillRect(-3, -8, 6, 16);
           ctx.fillRect(-8, -3, 16, 6);
+        } else if (pickup.type === "split") {
+          ctx.shadowColor = "#ff8fe6";
+          ctx.shadowBlur = 16;
+          drawStar(0, 0, 5, 15, 7);
+          ctx.fillStyle = "#ff8fe6";
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "#fff8ff";
+          ctx.stroke();
+          ctx.shadowColor = "#a8ddff";
+          ctx.shadowBlur = 8;
+          ctx.fillStyle = "#a8ddff";
+          ctx.beginPath();
+          ctx.arc(0, 0, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.rotate(-pickup.spin);
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "#40243a";
+          ctx.font = "900 12px ui-sans-serif, system-ui, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("+", 0, 0);
         } else {
+          ctx.fillStyle = "#e9c46a";
+          ctx.fillRect(-10, -10, 20, 20);
+          ctx.fillStyle = "#172018";
           ctx.fillRect(-5, -7, 10, 14);
         }
         ctx.restore();
