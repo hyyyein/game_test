@@ -442,6 +442,134 @@
       margin-bottom: 24px;
     }
 
+    .level-up-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(255, 159, 214, 0.16), transparent 32%),
+        rgba(12, 9, 18, 0.58);
+      backdrop-filter: blur(5px) saturate(1.08);
+    }
+
+    .level-up-screen.hidden {
+      display: none;
+    }
+
+    .level-up-panel {
+      width: min(760px, calc(100vw - 24px));
+      padding: 18px;
+      border: 1px solid rgba(255, 226, 246, 0.52);
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.18), transparent 34%),
+        linear-gradient(135deg, rgba(255, 225, 245, 0.2), rgba(137, 216, 255, 0.1)),
+        rgba(31, 23, 39, 0.82);
+      box-shadow:
+        0 20px 46px rgba(16, 8, 24, 0.48),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      text-align: center;
+    }
+
+    .level-up-panel h2 {
+      margin: 0 0 14px;
+      color: #fff8ff;
+      font-size: clamp(28px, 5vw, 46px);
+      line-height: 1;
+      letter-spacing: 0;
+      text-shadow: 0 0 18px rgba(255, 143, 230, 0.56);
+    }
+
+    .level-card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .level-card {
+      position: relative;
+      display: grid;
+      grid-template-rows: 58px auto 1fr;
+      min-width: 0;
+      min-height: 168px;
+      padding: 12px 10px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 248, 255, 0.68);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 20%, rgba(255, 255, 255, 0.12) 72%),
+        radial-gradient(circle at 50% 35%, rgba(255, 248, 255, 0.12), transparent 40%),
+        linear-gradient(180deg, rgba(28, 20, 42, 0.96), rgba(45, 31, 58, 0.94));
+      color: var(--text);
+      box-shadow:
+        0 14px 28px rgba(10, 6, 18, 0.34),
+        inset 0 0 0 1px rgba(255, 159, 214, 0.32),
+        inset 0 0 18px rgba(168, 221, 255, 0.12);
+    }
+
+    .level-card::before {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border: 1px solid rgba(255, 213, 245, 0.28);
+      border-radius: 5px;
+      pointer-events: none;
+    }
+
+    .level-card:hover,
+    .level-card:focus-visible {
+      filter: brightness(1.08) saturate(1.1);
+      outline: 2px solid rgba(255, 248, 255, 0.86);
+      outline-offset: 3px;
+    }
+
+    .level-icon {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 58px;
+      height: 58px;
+      margin: 0 auto;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 30px;
+      line-height: 1;
+      text-shadow: 0 0 14px currentColor;
+    }
+
+    .level-card[data-tone="pink"] {
+      border-color: rgba(255, 143, 230, 0.78);
+    }
+
+    .level-card[data-tone="gold"] {
+      border-color: rgba(255, 215, 126, 0.82);
+    }
+
+    .level-card[data-tone="blue"] {
+      border-color: rgba(168, 221, 255, 0.78);
+    }
+
+    .level-card h3 {
+      margin: 8px 0 5px;
+      color: #fff8ff;
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.1;
+      text-shadow: 0 2px 8px rgba(32, 14, 34, 0.44);
+      white-space: nowrap;
+    }
+
+    .level-card p {
+      margin: 0;
+      color: #f5cce9;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
     .character-select {
       width: min(560px, calc(100vw - 32px));
     }
@@ -506,7 +634,7 @@
 
       .cluster {
         display: grid;
-        grid-template-columns: minmax(112px, 1.45fr) repeat(3, minmax(56px, 0.7fr));
+        grid-template-columns: minmax(92px, 1.35fr) repeat(4, minmax(48px, 0.7fr));
         gap: 6px;
         max-width: 100%;
         width: 100%;
@@ -587,6 +715,46 @@
         width: min(330px, 100%);
       }
 
+      .level-up-screen {
+        padding: 10px;
+      }
+
+      .level-up-panel {
+        width: min(390px, calc(100vw - 18px));
+        padding: 12px;
+      }
+
+      .level-up-panel h2 {
+        margin-bottom: 10px;
+        font-size: 28px;
+      }
+
+      .level-card-grid {
+        gap: 6px;
+      }
+
+      .level-card {
+        grid-template-rows: 44px auto 1fr;
+        min-height: 138px;
+        padding: 8px 6px;
+      }
+
+      .level-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 24px;
+      }
+
+      .level-card h3 {
+        margin: 7px 0 4px;
+        font-size: 14px;
+      }
+
+      .level-card p {
+        font-size: 10px;
+        line-height: 1.22;
+      }
+
     }
   </style>
 </head>
@@ -602,6 +770,10 @@
       <div class="pill">
         <span class="label">Wave</span>
         <span class="value" id="wave">1</span>
+      </div>
+      <div class="pill">
+        <span class="label">Level</span>
+        <span class="value" id="level">1</span>
       </div>
       <div class="pill">
         <span class="label">Score</span>
@@ -652,6 +824,13 @@
     <button id="restartButton">Restart</button>
   </section>
 
+  <section class="level-up-screen hidden" id="levelUpScreen" aria-label="Level up upgrades">
+    <div class="level-up-panel">
+      <h2>LEVEL UP!</h2>
+      <div class="level-card-grid" id="levelCardGrid"></div>
+    </div>
+  </section>
+
   <div class="touch-controls" aria-label="Mobile controls">
     <div class="joystick" id="joystick" aria-label="Move joystick">
       <div class="stick" id="stick"></div>
@@ -667,6 +846,7 @@
     const ctx = canvas.getContext("2d");
     const healthBar = document.querySelector("#healthBar");
     const waveEl = document.querySelector("#wave");
+    const levelEl = document.querySelector("#level");
     const scoreEl = document.querySelector("#score");
     const ammoEl = document.querySelector("#ammo");
     const startScreen = document.querySelector("#startScreen");
@@ -681,6 +861,8 @@
     const leaderboardList = document.querySelector("#leaderboardList");
     const mainLeaderboardList = document.querySelector("#mainLeaderboardList");
     const scoreScreen = document.querySelector("#scoreScreen");
+    const levelUpScreen = document.querySelector("#levelUpScreen");
+    const levelCardGrid = document.querySelector("#levelCardGrid");
     const characterCards = document.querySelectorAll(".character-card");
     const touchButtons = document.querySelectorAll(".touch-btn");
     const joystick = document.querySelector("#joystick");
@@ -1753,9 +1935,14 @@ const walls =     [
       last: 0,
       score: 0,
       wave: 1,
+      level: 1,
+      xp: 0,
+      nextXp: 8,
       waveKills: 0,
       nextWaveKills: 10,
       spawnTimer: 0,
+      pausedForLevelUp: false,
+      levelChoices: [],
       particles: [],
       bullets: [],
       zombies: [],
@@ -1778,6 +1965,8 @@ const walls =     [
       projectileCount: 1,
       maxProjectileCount: 4,
       spreadAngle: 0.16,
+      damageMultiplier: 1,
+      fireDelay: 0.105,
       name: "Player",
       reload: 0,
       fireCooldown: 0,
@@ -1789,6 +1978,89 @@ const walls =     [
       character: selectedCharacter,
       bulletStyle: characters[selectedCharacter].bullet,
     };
+
+    const levelUpgrades = [
+      {
+        id: "split",
+        title: "탄환+",
+        description: "발사 갈래 +1",
+        icon: "✦",
+        tone: "pink",
+        isAvailable: () => player.projectileCount < player.maxProjectileCount,
+        apply: () => {
+          player.projectileCount = Math.min(player.maxProjectileCount, player.projectileCount + 1);
+        },
+      },
+      {
+        id: "damage",
+        title: "화력+",
+        description: "탄환 데미지 +15%",
+        icon: "◆",
+        tone: "gold",
+        isAvailable: () => player.damageMultiplier < 2,
+        apply: () => {
+          player.damageMultiplier = Math.min(2, player.damageMultiplier + 0.15);
+        },
+      },
+      {
+        id: "rapid",
+        title: "연사+",
+        description: "발사 쿨타임 감소",
+        icon: "≋",
+        tone: "blue",
+        isAvailable: () => player.fireDelay > 0.068,
+        apply: () => {
+          player.fireDelay = Math.max(0.068, player.fireDelay * 0.9);
+        },
+      },
+      {
+        id: "speed",
+        title: "이속+",
+        description: "이동속도 +8%",
+        icon: "»",
+        tone: "blue",
+        isAvailable: () => player.speed < 390,
+        apply: () => {
+          player.speed = Math.min(390, Math.round(player.speed * 1.08));
+        },
+      },
+      {
+        id: "max-hp",
+        title: "체력+",
+        description: "최대 HP +20",
+        icon: "♥",
+        tone: "pink",
+        isAvailable: () => player.maxHp < 180,
+        apply: () => {
+          player.maxHp = Math.min(180, player.maxHp + 20);
+          player.hp = Math.min(player.maxHp, player.hp + 20);
+        },
+      },
+      {
+        id: "ammo-cap",
+        title: "탄창+",
+        description: "최대 Ammo +4",
+        icon: "▣",
+        tone: "gold",
+        isAvailable: () => player.maxAmmo < 48,
+        apply: () => {
+          player.maxAmmo = Math.min(48, player.maxAmmo + 4);
+          player.ammo = player.maxAmmo;
+        },
+      },
+      {
+        id: "heal",
+        title: "응급보급",
+        description: "HP 35 + Ammo 회복",
+        icon: "+",
+        tone: "gold",
+        isAvailable: () => true,
+        apply: () => {
+          player.hp = Math.min(player.maxHp, player.hp + 35);
+          player.ammo = player.maxAmmo;
+        },
+      },
+    ];
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
@@ -1832,6 +2104,59 @@ const walls =     [
         "\"": "&quot;",
         "'": "&#39;",
       }[char]));
+    }
+
+    function pickLevelChoices() {
+      const available = levelUpgrades.filter((upgrade) => upgrade.isAvailable());
+      const fallback = levelUpgrades.filter((upgrade) => !available.includes(upgrade));
+      return [
+        ...available.sort(() => Math.random() - 0.5),
+        ...fallback.sort(() => Math.random() - 0.5),
+      ].slice(0, 3);
+    }
+
+    function renderLevelChoices() {
+      levelCardGrid.innerHTML = state.levelChoices.map((upgrade) => `
+        <button class="level-card" type="button" data-upgrade="${upgrade.id}" data-tone="${upgrade.tone}">
+          <span class="level-icon">${escapeHtml(upgrade.icon)}</span>
+          <h3>${escapeHtml(upgrade.title)}</h3>
+          <p>${escapeHtml(upgrade.description)}</p>
+        </button>
+      `).join("");
+    }
+
+    function startLevelUp() {
+      state.pausedForLevelUp = true;
+      state.levelChoices = pickLevelChoices();
+      keys.clear();
+      pointer.down = false;
+      resetJoystick();
+      renderLevelChoices();
+      levelUpScreen.classList.remove("hidden");
+    }
+
+    function awardXp(amount) {
+      state.xp += amount;
+      while (state.xp >= state.nextXp) {
+        state.xp -= state.nextXp;
+        state.level += 1;
+        state.nextXp = Math.floor(state.nextXp * 1.25 + 3);
+        updateHud();
+        startLevelUp();
+        break;
+      }
+    }
+
+    function chooseLevelUpgrade(upgradeId) {
+      const upgrade = state.levelChoices.find((choice) => choice.id === upgradeId);
+      if (!upgrade) return;
+      upgrade.apply();
+      state.pausedForLevelUp = false;
+      state.levelChoices = [];
+      levelCardGrid.innerHTML = "";
+      levelUpScreen.classList.add("hidden");
+      updateHud();
+      puff(player.x, player.y, upgrade.tone === "gold" ? "#ffd77e" : upgrade.tone === "blue" ? "#a8ddff" : "#ff8fe6", 24, 190);
     }
 
     function loadLeaderboard() {
@@ -1980,6 +2305,8 @@ const walls =     [
         projectileCount: 1,
         maxProjectileCount: 4,
         spreadAngle: 0.16,
+        damageMultiplier: 1,
+        fireDelay: 0.105,
         name: cleanName(nicknameInput.value),
         reload: 0,
         dash: 0,
@@ -2000,9 +2327,14 @@ const walls =     [
         last: performance.now(),
         score: 0,
         wave: 1,
+        level: 1,
+        xp: 0,
+        nextXp: 8,
         waveKills: 0,
         nextWaveKills: 10,
         spawnTimer: 0,
+        pausedForLevelUp: false,
+        levelChoices: [],
         particles: [],
         bullets: [],
         zombies: [],
@@ -2015,6 +2347,8 @@ const walls =     [
       scoreScreen.classList.add("hidden");
       characterSelectScreen.classList.add("hidden");
       gameOverScreen.classList.add("hidden");
+      levelUpScreen.classList.add("hidden");
+      levelCardGrid.innerHTML = "";
       updateHud();
       requestAnimationFrame(loop);
     }
@@ -2060,7 +2394,7 @@ const walls =     [
     function shoot() {
       if (player.fireCooldown > 0 || player.reload > 0 || player.ammo <= 0) return;
       player.ammo -= 1;
-      player.fireCooldown = 0.105;
+      player.fireCooldown = player.fireDelay;
       player.castPulse = 0.2;
       const count = clamp(Math.round(player.projectileCount), 1, player.maxProjectileCount);
       const damageByCount = [0, 34, 28, 24, 21];
@@ -2078,7 +2412,7 @@ const walls =     [
           vx: Math.cos(angle) * 860,
           vy: Math.sin(angle) * 860,
           life: 0.78,
-          damage: damageByCount[count] || 21,
+          damage: Math.round((damageByCount[count] || 21) * player.damageMultiplier),
           style: player.bulletStyle,
         });
       }
@@ -2176,6 +2510,10 @@ const walls =     [
     }
 
     function update(dt) {
+      if (state.pausedForLevelUp) {
+        updateHud();
+        return;
+      }
       const wasReloading = player.reload > 0;
       player.fireCooldown = Math.max(0, player.fireCooldown - dt);
       player.reload = Math.max(0, player.reload - dt);
@@ -2306,6 +2644,7 @@ const walls =     [
     function killZombie(zombie) {
       state.score += 100 + state.wave * 12;
       state.waveKills += 1;
+      awardXp(1);
       puff(zombie.x, zombie.y, "#587747", 18, 180);
       const canUpgradeShot = player.projectileCount < player.maxProjectileCount;
       if (canUpgradeShot && Math.random() < 0.12) {
@@ -2338,17 +2677,20 @@ const walls =     [
 
     function endGame() {
       state.running = false;
+      state.pausedForLevelUp = false;
       bgm.pause();
       finalStats.textContent = `Score ${state.score} · Wave ${state.wave}`;
       saveScore();
       document.body.classList.remove("is-running");
       scoreScreen.classList.add("hidden");
+      levelUpScreen.classList.add("hidden");
       gameOverScreen.classList.remove("hidden");
     }
 
     function updateHud() {
       healthBar.style.width = `${clamp(player.hp / player.maxHp, 0, 1) * 100}%`;
       waveEl.textContent = state.wave;
+      levelEl.textContent = state.level;
       scoreEl.textContent = state.score;
       ammoEl.textContent = player.reload > 0 ? "Reload" : `${player.ammo}/${player.maxAmmo}${player.projectileCount > 1 ? ` x${player.projectileCount}` : ""}`;
     }
@@ -2740,6 +3082,11 @@ const walls =     [
       });
     }
     restartButton.addEventListener("click", resetGame);
+    levelCardGrid.addEventListener("click", (event) => {
+      const card = event.target.closest(".level-card");
+      if (!card) return;
+      chooseLevelUpgrade(card.dataset.upgrade);
+    });
     nicknameInput.value = localStorage.getItem("dead-block-run-name") || "";
     applyCharacter(selectedCharacter);
     renderLeaderboard();
