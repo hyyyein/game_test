@@ -214,6 +214,29 @@
       flex-wrap: wrap;
     }
 
+    .notice-screen {
+      width: min(760px, calc(100vw - 32px));
+      max-height: min(820px, calc(100vh - 32px));
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .notice-image {
+      display: block;
+      width: 100%;
+      max-height: calc(100vh - 140px);
+      object-fit: contain;
+      border: 1px solid rgba(255, 226, 246, 0.46);
+      border-radius: 8px;
+      box-shadow: 0 14px 30px rgba(25, 11, 32, 0.34);
+    }
+
+    .notice-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
     button {
       min-width: 150px;
       min-height: 44px;
@@ -687,6 +710,15 @@
         height: 118px;
       }
 
+      .notice-screen {
+        width: min(390px, calc(100vw - 18px));
+        padding: 10px;
+      }
+
+      .notice-image {
+        max-height: calc(100vh - 104px);
+      }
+
       .game-over {
         width: min(520px, calc(100vw - 24px));
         max-height: calc(100vh - 24px);
@@ -794,6 +826,7 @@
     <div class="start-actions">
       <button id="startButton">Start Run</button>
       <button id="scoreboardButton" type="button">점수판</button>
+      <button id="noticeButton" type="button">업데이트 공지</button>
     </div>
   </section>
 
@@ -801,6 +834,13 @@
     <h1>점수판</h1>
     <ol class="leaderboard" id="mainLeaderboardList"></ol>
     <button id="closeScoreButton" type="button">닫기</button>
+  </section>
+
+  <section class="banner notice-screen hidden" id="noticeScreen">
+    <img class="notice-image" src="assets/update-notice-levelup.png?v=20260430a" alt="업데이트 안내: 레벨업 카드 추가, 3갈래와 4갈래 탄환 강화, 화력 연사 체력 탄창 업그레이드, 모바일 3카드 선택 UI">
+    <div class="notice-actions">
+      <button id="closeNoticeButton" type="button">닫기</button>
+    </div>
   </section>
 
   <section class="banner character-select hidden" id="characterSelectScreen">
@@ -855,12 +895,15 @@
     const finalStats = document.querySelector("#finalStats");
     const startButton = document.querySelector("#startButton");
     const scoreboardButton = document.querySelector("#scoreboardButton");
+    const noticeButton = document.querySelector("#noticeButton");
     const closeScoreButton = document.querySelector("#closeScoreButton");
+    const closeNoticeButton = document.querySelector("#closeNoticeButton");
     const restartButton = document.querySelector("#restartButton");
     const nicknameInput = document.querySelector("#nicknameInput");
     const leaderboardList = document.querySelector("#leaderboardList");
     const mainLeaderboardList = document.querySelector("#mainLeaderboardList");
     const scoreScreen = document.querySelector("#scoreScreen");
+    const noticeScreen = document.querySelector("#noticeScreen");
     const levelUpScreen = document.querySelector("#levelUpScreen");
     const levelCardGrid = document.querySelector("#levelCardGrid");
     const characterCards = document.querySelectorAll(".character-card");
@@ -2345,6 +2388,7 @@ const walls =     [
       document.body.classList.add("is-running");
       startScreen.classList.add("hidden");
       scoreScreen.classList.add("hidden");
+      noticeScreen.classList.add("hidden");
       characterSelectScreen.classList.add("hidden");
       gameOverScreen.classList.add("hidden");
       levelUpScreen.classList.add("hidden");
@@ -3064,15 +3108,26 @@ const walls =     [
       localStorage.setItem("dead-block-run-name", nicknameInput.value);
       startScreen.classList.add("hidden");
       scoreScreen.classList.add("hidden");
+      noticeScreen.classList.add("hidden");
       characterSelectScreen.classList.remove("hidden");
     });
     scoreboardButton.addEventListener("click", () => {
       renderLeaderboard();
       startScreen.classList.add("hidden");
+      noticeScreen.classList.add("hidden");
       scoreScreen.classList.remove("hidden");
+    });
+    noticeButton.addEventListener("click", () => {
+      startScreen.classList.add("hidden");
+      scoreScreen.classList.add("hidden");
+      noticeScreen.classList.remove("hidden");
     });
     closeScoreButton.addEventListener("click", () => {
       scoreScreen.classList.add("hidden");
+      if (!state.running) startScreen.classList.remove("hidden");
+    });
+    closeNoticeButton.addEventListener("click", () => {
+      noticeScreen.classList.add("hidden");
       if (!state.running) startScreen.classList.remove("hidden");
     });
     for (const card of characterCards) {
