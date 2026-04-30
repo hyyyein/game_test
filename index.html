@@ -1730,6 +1730,24 @@ const walls =     [
                 "h": 198
           }
     ];
+    const spawnPoints = [
+      { x: 740, y: 260 },
+      { x: 900, y: 260 },
+      { x: 1060, y: 260 },
+      { x: 1140, y: 260 },
+      { x: 1060, y: 1940 },
+      { x: 1740, y: 1980 },
+      { x: 1780, y: 1940 },
+      { x: 1820, y: 1980 },
+      { x: 220, y: 1060 },
+      { x: 260, y: 1060 },
+      { x: 220, y: 1700 },
+      { x: 260, y: 1740 },
+      { x: 1940, y: 1020 },
+      { x: 1940, y: 1060 },
+      { x: 1980, y: 1100 },
+      { x: 1940, y: 1140 },
+    ];
     const state = {
       running: false,
       last: 0,
@@ -2005,12 +2023,24 @@ const walls =     [
       return [];
     }
 
+    function getSpawnPoint(bodyRadius) {
+      const clearRadius = bodyRadius + 30;
+      const candidates = spawnPoints
+        .filter((point) => !hitsWall(point.x, point.y, clearRadius) && distance(point, player) > 520)
+        .sort((a, b) => distance(b, player) - distance(a, player));
+      if (candidates.length) {
+        return candidates[Math.floor(rand(0, candidates.length))];
+      }
+      return findOpenPointAround(player.x, player.y, 680, 920, clearRadius) || { x: world.w / 2, y: 220 };
+    }
+
     function spawnZombie() {
-      const edge = Math.floor(rand(0, 4));
+      const radius = rand(15, 23);
+      const point = getSpawnPoint(radius);
       const z = {
-        x: edge === 0 ? -80 : edge === 1 ? world.w + 80 : rand(0, world.w),
-        y: edge === 2 ? -80 : edge === 3 ? world.h + 80 : rand(0, world.h),
-        r: rand(15, 23),
+        x: point.x,
+        y: point.y,
+        r: radius,
         hp: 42 + state.wave * 8,
         maxHp: 42 + state.wave * 8,
         speed: rand(58, 84) + state.wave * 5,
