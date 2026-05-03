@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>펫창고: 포켓 펫샵</title>
+  <meta name="description" content="반려동물 소모품 재고가 선반에서 차고 비는 세로형 픽셀 미니앱">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell" aria-label="펫창고 포켓 펫샵 홈">
+    <header class="topbar">
+      <button class="icon-button" type="button" aria-label="뒤로가기">
+        <span aria-hidden="true">←</span>
+      </button>
+      <div class="brand">
+        <span class="brand-kicker">PET PANTRY</span>
+        <h1>펫창고</h1>
+      </div>
+      <div class="top-actions" aria-label="빠른 조작">
+        <button class="tool-button" id="pass-day-button" type="button" aria-label="1주 지남" title="1주 지남">↻</button>
+        <button class="tool-button" id="fill-low-button" type="button" aria-label="부족한 품목 채우기" title="채웠어요">＋</button>
+        <button class="tool-button" id="reset-button" type="button" aria-label="처음으로" title="처음으로">↺</button>
+        <button class="tool-button" id="editor-toggle" type="button" aria-label="편집 모드 열기" title="편집">⚙</button>
+      </div>
+    </header>
+
+    <section class="shop-stage" aria-label="세로형 픽셀 펫샵 선반">
+      <img src="./assets/pet-shop-concept.png" alt="소모품이 채워진 픽셀 펫샵 선반" class="shop-art">
+
+      <div class="visual-stock-layer" aria-label="선반 위 재고">
+        <div class="stock-group food-group" data-slot="food" aria-label="사료 재고"></div>
+        <div class="stock-group can-group" data-slot="can" aria-label="캔 재고"></div>
+        <div class="stock-group treat-group" data-slot="treat" aria-label="간식 재고"></div>
+        <div class="stock-group pad-group" data-slot="pad" aria-label="패드 재고"></div>
+        <div class="stock-group litter-group" data-slot="litter" aria-label="모래 재고"></div>
+      </div>
+
+    </section>
+
+    <section class="quick-tray" aria-label="입고 트레이">
+      <button class="item-button selected" type="button" data-item="food">
+        <span class="item-icon food" aria-hidden="true"></span>
+        <span>사료</span>
+      </button>
+      <button class="item-button" type="button" data-item="can">
+        <span class="item-icon can" aria-hidden="true"></span>
+        <span>캔</span>
+      </button>
+      <button class="item-button" type="button" data-item="treat">
+        <span class="item-icon treat" aria-hidden="true"></span>
+        <span>간식</span>
+      </button>
+      <button class="item-button" type="button" data-item="pad">
+        <span class="item-icon pad" aria-hidden="true"></span>
+        <span>패드</span>
+      </button>
+      <button class="item-button" type="button" data-item="litter">
+        <span class="item-icon litter" aria-hidden="true"></span>
+        <span>모래</span>
+      </button>
+    </section>
+
+    <aside class="editor-panel" id="editor-panel" aria-label="디자인 편집 패널" hidden>
+      <div class="editor-head">
+        <strong>편집 모드</strong>
+        <button class="mini-button" id="editor-close" type="button">닫기</button>
+      </div>
+
+      <details class="editor-details">
+        <summary>텍스트 수정</summary>
+        <div class="editor-grid">
+          <label>
+            앱 제목
+            <input type="text" data-edit-text="appTitle" maxlength="10">
+          </label>
+          <label>
+            상단 라벨
+            <input type="text" data-edit-text="kicker" maxlength="16">
+          </label>
+        </div>
+      </details>
+
+      <div class="range-list" aria-label="선반 줄 위치">
+        <label>사료 Y <input type="range" min="0" max="84" step="1" data-edit-position="food"></label>
+        <label>캔 Y <input type="range" min="0" max="84" step="1" data-edit-position="can"></label>
+        <label>간식 Y <input type="range" min="0" max="84" step="1" data-edit-position="treat"></label>
+        <label>패드 Y <input type="range" min="0" max="84" step="1" data-edit-position="pad"></label>
+        <label>모래 Y <input type="range" min="0" max="84" step="1" data-edit-position="litter"></label>
+      </div>
+
+      <div class="coord-list" aria-label="좌표 값">
+        <label>사료 <input type="text" data-coord="food" readonly></label>
+        <label>캔 <input type="text" data-coord="can" readonly></label>
+        <label>간식 <input type="text" data-coord="treat" readonly></label>
+        <label>패드 <input type="text" data-coord="pad" readonly></label>
+        <label>모래 <input type="text" data-coord="litter" readonly></label>
+      </div>
+
+      <div class="editor-actions">
+        <button class="mini-button" id="editor-reset" type="button">편집 초기화</button>
+      </div>
+    </aside>
+
+    <section class="onboarding" id="onboarding" aria-label="펫창고 이름 설정" hidden>
+      <form class="onboarding-card" id="onboarding-form">
+        <span class="brand-kicker">PET PANTRY</span>
+        <h2>누구의 펫창고인가요?</h2>
+        <label>
+          펫 이름
+          <input id="pet-name-input" type="text" maxlength="8" placeholder="두부" autocomplete="off">
+        </label>
+        <button class="start-button" type="submit">시작하기</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
