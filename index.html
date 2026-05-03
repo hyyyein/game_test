@@ -480,8 +480,11 @@
       inset: 0;
       z-index: 20;
       display: grid;
-      place-items: center;
+      align-items: center;
+      justify-items: center;
+      min-height: 100dvh;
       padding: 18px;
+      overflow: auto;
       background:
         radial-gradient(circle at 50% 38%, rgba(255, 159, 214, 0.16), transparent 32%),
         rgba(12, 9, 18, 0.58);
@@ -493,7 +496,10 @@
     }
 
     .level-up-panel {
+      display: grid;
+      align-content: center;
       width: min(760px, calc(100vw - 24px));
+      margin: auto;
       padding: 18px;
       border: 1px solid rgba(255, 226, 246, 0.52);
       border-radius: 8px;
@@ -519,13 +525,16 @@
     .level-card-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: stretch;
       gap: 10px;
     }
 
     .level-card {
       position: relative;
       display: grid;
-      grid-template-rows: 58px auto 1fr;
+      grid-template-rows: auto auto auto;
+      align-content: center;
+      justify-items: center;
       min-width: 0;
       min-height: 168px;
       padding: 12px 10px;
@@ -601,15 +610,16 @@
       font-size: 12px;
       font-weight: 800;
       line-height: 1.25;
+      max-width: 18ch;
     }
 
     .character-select {
-      width: min(560px, calc(100vw - 32px));
+      width: min(760px, calc(100vw - 32px));
     }
 
     .character-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       justify-content: center;
       align-items: center;
       gap: 12px;
@@ -708,7 +718,7 @@
       }
 
       .character-select {
-        width: min(420px, calc(100vw - 24px));
+        width: min(430px, calc(100vw - 24px));
       }
 
       .character-grid {
@@ -721,8 +731,8 @@
       }
 
       .character-preview {
-        width: 118px;
-        height: 118px;
+        width: 106px;
+        height: 106px;
       }
 
       .notice-screen {
@@ -781,7 +791,6 @@
       }
 
       .level-card {
-        grid-template-rows: 44px auto 1fr;
         min-height: 138px;
         padding: 8px 6px;
       }
@@ -870,6 +879,10 @@
         <img class="character-preview" src="assets/player-gun-preview.png?v=preview-20260429a" alt="">
         <span>권총소녀</span>
       </button>
+      <button class="character-card" data-character="kunai" aria-label="쿠나이 캐릭터 선택">
+        <img class="character-preview" src="assets/player-kunai-preview.png?v=preview-20260504a" alt="">
+        <span>쿠나이소년</span>
+      </button>
     </div>
   </section>
 
@@ -933,8 +946,10 @@
     monsterImage.src = "assets/monster-dog-spritesheet.png";
     const bossMonsterImage = new Image();
     bossMonsterImage.src = "assets/monster-dog-boss-spritesheet.png?v=boss-20260501a";
-    const mapImage = new Image();
-    mapImage.src = "assets/map-texture.png";
+    const dungeonMapImage = new Image();
+    dungeonMapImage.src = "assets/map-texture.png";
+    const snowMapImage = new Image();
+    snowMapImage.src = "assets/map-snow-village.png?v=20260504a";
     const bgm = new Audio("assets/bgm.mp3");
     bgm.loop = true;
     bgm.volume = 0.42;
@@ -955,6 +970,10 @@
         bullet: "magic",
         frameCols: 4,
         frameRows: 8,
+        walkFrameCols: 2,
+        castFrame: 3,
+        walkBob: 4,
+        walkSway: 1.6,
         spriteH: 103,
         nameY: -82,
         rows: { down: 0, up: 4, right: 2, left: 6 },
@@ -967,6 +986,10 @@
         bullet: "pistol",
         frameCols: 4,
         frameRows: 8,
+        walkFrameCols: 2,
+        castFrame: 3,
+        walkBob: 4,
+        walkSway: 1.6,
         spriteH: 118,
         nameY: -90,
         rows: { down: 0, up: 4, right: 2, left: 6 },
@@ -974,9 +997,25 @@
         flips: {},
         cropByRow: {},
       },
+      kunai: {
+        src: "assets/player-kunai-spritesheet.png?v=kunai-20260504a",
+        bullet: "kunai",
+        frameCols: 4,
+        frameRows: 8,
+        walkFrameCols: 2,
+        castFrame: 3,
+        walkBob: 4,
+        walkSway: 1.6,
+        spriteH: 124,
+        nameY: -96,
+        rows: { down: 0, up: 4, right: 2, left: 6 },
+        angleRows: [2, 1, 0, 7, 6, 5, 4, 3],
+        flips: {},
+        cropByRow: {},
+      },
     };
     let selectedCharacter = localStorage.getItem("dead-block-run-character") || "pistol";
-const walls =     [
+const dungeonWalls =     [
           {
                 "x": 1150,
                 "y": 22,
@@ -1992,10 +2031,78 @@ const walls =     [
       { x: 1980, y: 1100 },
       { x: 1940, y: 1140 },
     ];
+    const snowWalls = [
+      { x: 0, y: 0, w: 170, h: 238 },
+      { x: 0, y: 128, w: 356, h: 384 },
+      { x: 294, y: 216, w: 174, h: 96 },
+      { x: 386, y: 0, w: 176, h: 198 },
+      { x: 690, y: 0, w: 298, h: 166 },
+      { x: 1068, y: 0, w: 244, h: 188 },
+      { x: 1282, y: 0, w: 210, h: 158 },
+      { x: 1514, y: 0, w: 686, h: 536 },
+      { x: 1798, y: 462, w: 132, h: 128 },
+      { x: 2024, y: 470, w: 176, h: 254 },
+      { x: 0, y: 680, w: 196, h: 382 },
+      { x: 0, y: 1162, w: 342, h: 260 },
+      { x: 120, y: 1368, w: 220, h: 246 },
+      { x: 0, y: 1570, w: 612, h: 630 },
+      { x: 486, y: 1778, w: 168, h: 190 },
+      { x: 716, y: 1948, w: 192, h: 252 },
+      { x: 948, y: 1902, w: 214, h: 254 },
+      { x: 1198, y: 1930, w: 168, h: 232 },
+      { x: 1364, y: 1844, w: 132, h: 178 },
+      { x: 1540, y: 1478, w: 660, h: 722 },
+      { x: 1748, y: 1246, w: 452, h: 226 },
+      { x: 1712, y: 908, w: 254, h: 238 },
+      { x: 1924, y: 868, w: 276, h: 240 },
+      { x: 2062, y: 1094, w: 138, h: 166 },
+      { x: 1522, y: 1090, w: 166, h: 152 },
+      { x: 1338, y: 1590, w: 126, h: 126 },
+      { x: 1168, y: 1760, w: 138, h: 142 },
+      { x: 248, y: 540, w: 118, h: 132 },
+      { x: 1478, y: 518, w: 152, h: 118 },
+    ];
+    const snowSpawnPoints = [
+      { x: 660, y: 220 },
+      { x: 880, y: 220 },
+      { x: 440, y: 440 },
+      { x: 660, y: 440 },
+      { x: 880, y: 440 },
+      { x: 1100, y: 440 },
+      { x: 1320, y: 440 },
+      { x: 440, y: 660 },
+      { x: 1760, y: 660 },
+      { x: 440, y: 880 },
+      { x: 440, y: 1100 },
+      { x: 440, y: 1320 },
+      { x: 660, y: 1540 },
+      { x: 880, y: 1760 },
+      { x: 1100, y: 1760 },
+    ];
+    const mapConfigs = {
+      dungeon: {
+        title: "던전 입구",
+        image: dungeonMapImage,
+        walls: dungeonWalls,
+        spawnPoints,
+        shade: "rgba(20, 12, 8, 0.14)",
+        border: "rgba(233,196,106,0.28)",
+      },
+      snow: {
+        title: "설원 마을",
+        image: snowMapImage,
+        walls: snowWalls,
+        spawnPoints: snowSpawnPoints,
+        shade: "rgba(31, 61, 96, 0.08)",
+        border: "rgba(199, 229, 255, 0.36)",
+      },
+    };
     const state = {
       running: false,
       last: 0,
       score: 0,
+      mapKey: "dungeon",
+      mapFlash: 0,
       wave: 1,
       level: 1,
       xp: 0,
@@ -2175,6 +2282,14 @@ const walls =     [
 
     function distance(a, b) {
       return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function mapKeyForWave(wave) {
+      return wave >= 6 ? "snow" : "dungeon";
+    }
+
+    function activeMapConfig() {
+      return mapConfigs[state.mapKey] || mapConfigs.dungeon;
     }
 
     function updateCamera() {
@@ -2364,7 +2479,7 @@ const walls =     [
     }
 
     function hitsWall(x, y, r) {
-      return walls.some((wall) => circleHitsRect(x, y, r, wall));
+      return activeMapConfig().walls.some((wall) => circleHitsRect(x, y, r, wall));
     }
 
     function moveActor(actor, dx, dy, radius) {
@@ -2386,6 +2501,32 @@ const walls =     [
         if (!hitsWall(px, py, bodyRadius)) return { x: px, y: py };
       }
       return null;
+    }
+
+    function moveEntityToOpenGround(actor, bodyRadius) {
+      if (!hitsWall(actor.x, actor.y, bodyRadius)) return;
+      const openPoint = findOpenPointAround(actor.x, actor.y, 80, 520, bodyRadius) ||
+        findOpenPointAround(world.w / 2, world.h / 2, 0, 360, bodyRadius);
+      if (openPoint) {
+        actor.x = openPoint.x;
+        actor.y = openPoint.y;
+        return;
+      }
+      actor.x = world.w / 2;
+      actor.y = world.h / 2;
+    }
+
+    function syncMapForWave() {
+      const nextMapKey = mapKeyForWave(state.wave);
+      if (state.mapKey === nextMapKey) return;
+      state.mapKey = nextMapKey;
+      state.mapFlash = 2.2;
+      moveEntityToOpenGround(player, player.r);
+      for (const zombie of state.zombies) {
+        moveEntityToOpenGround(zombie, zombie.r * 0.85);
+      }
+      state.pickups = state.pickups.filter((pickup) => !hitsWall(pickup.x, pickup.y, 12));
+      updateCamera();
     }
 
     function resize() {
@@ -2434,6 +2575,8 @@ const walls =     [
         running: true,
         last: performance.now(),
         score: 0,
+        mapKey: mapKeyForWave(1),
+        mapFlash: 0,
         wave: 1,
         level: 1,
         xp: 0,
@@ -2470,7 +2613,7 @@ const walls =     [
 
     function getSpawnPoint(bodyRadius) {
       const clearRadius = bodyRadius + 30;
-      const candidates = spawnPoints
+      const candidates = activeMapConfig().spawnPoints
         .filter((point) => !hitsWall(point.x, point.y, clearRadius) && distance(point, player) > 520)
         .sort((a, b) => distance(b, player) - distance(a, player));
       if (candidates.length) {
@@ -2626,7 +2769,7 @@ const walls =     [
           style: player.bulletStyle,
         });
       }
-      const sparkColor = player.bulletStyle === "pistol" ? "#ffc95a" : "#ff65bc";
+      const sparkColor = player.bulletStyle === "pistol" ? "#ffc95a" : player.bulletStyle === "kunai" ? "#b9f28f" : "#ff65bc";
       puff(player.x + Math.cos(player.angle) * 46, player.y + Math.sin(player.angle) * 46, sparkColor, 6 + count, 220);
     }
 
@@ -2732,6 +2875,7 @@ const walls =     [
       player.invulnerable = Math.max(0, player.invulnerable - dt);
       player.castPulse = Math.max(0, player.castPulse - dt);
       state.bossAlertTimer = Math.max(0, state.bossAlertTimer - dt);
+      state.mapFlash = Math.max(0, state.mapFlash - dt);
       if (wasReloading && player.reload === 0) player.ammo = player.maxAmmo;
 
       const move = getMoveVector();
@@ -2912,6 +3056,7 @@ const walls =     [
         state.wave += 1;
         state.waveKills = 0;
         state.nextWaveKills += 5;
+        syncMapForWave();
         player.maxAmmo = Math.min(42, player.maxAmmo + 2);
         player.ammo = player.maxAmmo;
         player.hp = Math.min(player.maxHp, player.hp + 18);
@@ -2960,15 +3105,18 @@ const walls =     [
       drawParticles();
       ctx.restore();
       drawVignette(w, h);
+      drawMapTransition(w, h);
       drawBossOverlay(w, h);
     }
 
     function drawGround() {
+      const mapConfig = activeMapConfig();
+      const groundImage = mapConfig.image;
       ctx.fillStyle = "#121a14";
       ctx.fillRect(0, 0, world.w, world.h);
-      if (mapImage.complete && mapImage.naturalWidth > 0) {
-        ctx.drawImage(mapImage, 0, 0, world.w, world.h);
-        ctx.fillStyle = "rgba(20, 12, 8, 0.14)";
+      if (groundImage.complete && groundImage.naturalWidth > 0) {
+        ctx.drawImage(groundImage, 0, 0, world.w, world.h);
+        ctx.fillStyle = mapConfig.shade;
         ctx.fillRect(0, 0, world.w, world.h);
       } else {
         ctx.strokeStyle = "rgba(232,239,221,0.045)";
@@ -2986,7 +3134,7 @@ const walls =     [
           ctx.stroke();
         }
       }
-      ctx.strokeStyle = "rgba(233,196,106,0.28)";
+      ctx.strokeStyle = mapConfig.border;
       ctx.lineWidth = 5;
       ctx.strokeRect(6, 6, world.w - 12, world.h - 12);
     }
@@ -3012,9 +3160,13 @@ const walls =     [
       ctx.translate(player.x, player.y);
       ctx.globalAlpha = player.invulnerable > 0 ? 0.62 : 1;
       const spriteConfig = characters[player.character] || characters.pistol;
+      const stepPhase = player.moving ? player.animTime * 18 : 0;
+      const stepLift = player.moving ? Math.abs(Math.sin(stepPhase)) : 0;
+      const walkBob = stepLift * (spriteConfig.walkBob ?? 0);
+      const walkSway = player.moving ? Math.sin(stepPhase) * (spriteConfig.walkSway ?? 0) : 0;
       ctx.fillStyle = "rgba(0,0,0,0.28)";
       ctx.beginPath();
-      ctx.ellipse(0, 22, 24, 9, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 22, 24 + stepLift * 2, 9 - stepLift * 1.4, 0, 0, Math.PI * 2);
       ctx.fill();
 
       if (playerImage.complete && playerImage.naturalWidth > 0) {
@@ -3022,11 +3174,12 @@ const walls =     [
         const frameRows = spriteConfig.frameRows || 4;
         const frameW = playerImage.naturalWidth / frameCols;
         const frameH = playerImage.naturalHeight / frameRows;
-        const walkFrame = Math.floor(player.animTime * 9) % frameCols;
+        const walkFrameCols = spriteConfig.walkFrameCols || frameCols;
+        const walkFrame = Math.floor(player.animTime * 9) % walkFrameCols;
         const pose = spritePoseFromAngle(spriteConfig);
         const row = pose.row;
-        const castFrame = Math.min(frameCols - 1, 3);
-        const col = player.castPulse > 0 && !player.moving ? castFrame : player.moving ? walkFrame : 0;
+        const castFrame = Math.min(frameCols - 1, spriteConfig.castFrame ?? 3);
+        const col = player.castPulse > 0 ? castFrame : player.moving ? walkFrame : 0;
         const crop = spriteConfig.cropByRow[row] || {};
         const sourceX = col * frameW + (crop.left || 0);
         const sourceY = row * frameH + (crop.top || 0);
@@ -3035,12 +3188,12 @@ const walls =     [
         const scale = spriteConfig.spriteH / frameH;
         const spriteW = sourceW * scale;
         const spriteH = sourceH * scale;
-        const spriteY = -spriteConfig.spriteH + 34 + (crop.top || 0) * scale;
+        const spriteY = -spriteConfig.spriteH + 34 + (crop.top || 0) * scale - walkBob;
         const flipX = pose.flipX;
 
         ctx.save();
         if (flipX) ctx.scale(-1, 1);
-        ctx.drawImage(playerImage, sourceX, sourceY, sourceW, sourceH, -spriteW / 2, spriteY, spriteW, spriteH);
+        ctx.drawImage(playerImage, sourceX, sourceY, sourceW, sourceH, -spriteW / 2 + walkSway, spriteY, spriteW, spriteH);
         ctx.restore();
       } else {
         ctx.fillStyle = "#f3a4c4";
@@ -3146,6 +3299,29 @@ const walls =     [
           ctx.fillRect(-4, -3, 14 + bullet.pierce * 2, 6);
           ctx.fillStyle = "#fff8d6";
           ctx.fillRect(6, -2, 5, 4);
+        } else if (bullet.style === "kunai") {
+          ctx.shadowColor = bullet.crit ? "#ffd77e" : "#9eea85";
+          ctx.shadowBlur = bullet.crit ? 18 : 9;
+          ctx.fillStyle = "rgba(137, 214, 117, 0.22)";
+          ctx.fillRect(-22 - bullet.pierce * 3, -2, 24 + bullet.pierce * 4, 4);
+          ctx.fillStyle = bullet.crit ? "#fff2a6" : "#d7dde9";
+          ctx.beginPath();
+          ctx.moveTo(16 + bullet.pierce * 2, 0);
+          ctx.lineTo(-2, -7);
+          ctx.lineTo(-8, 0);
+          ctx.lineTo(-2, 7);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = "#334052";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = "#29354a";
+          ctx.fillRect(-18, -2, 13, 4);
+          ctx.strokeStyle = bullet.crit ? "#ffd77e" : "#8fa2bd";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(-23, 0, 4, 0, Math.PI * 2);
+          ctx.stroke();
         } else {
           ctx.shadowColor = bullet.crit ? "#ffd77e" : "#ff65bc";
           ctx.shadowBlur = bullet.crit ? 18 : 12;
@@ -3249,6 +3425,23 @@ const walls =     [
       gradient.addColorStop(1, "rgba(0,0,0,0.5)");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, w, h);
+    }
+
+    function drawMapTransition(w, h) {
+      if (state.mapFlash <= 0) return;
+      const alpha = clamp(state.mapFlash / 2.2, 0, 1);
+      const title = `${activeMapConfig().title} 진입`;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, alpha * 1.2);
+      ctx.font = "900 28px ui-sans-serif, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "rgba(33, 18, 44, 0.82)";
+      ctx.fillStyle = "#e8f6ff";
+      ctx.strokeText(title, w / 2, h * 0.24);
+      ctx.fillText(title, w / 2, h * 0.24);
+      ctx.restore();
     }
 
     function drawBossOverlay(w, h) {
