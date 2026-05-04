@@ -225,7 +225,7 @@
     }
 
     .notice-screen {
-      width: min(760px, calc(100vw - 32px));
+      width: min(980px, calc(100vw - 32px));
       max-height: min(820px, calc(100vh - 32px));
       padding: 16px;
       overflow: auto;
@@ -862,7 +862,7 @@
   </section>
 
   <section class="banner notice-screen hidden" id="noticeScreen">
-    <img class="notice-image" src="assets/update-notice-levelup.png?v=20260501a" alt="2026년 5월 1일 업데이트 안내: 루이 보스폼, 보스 웨이브 경고, 보스 HP바, XP 보석, XP바, 자석 관통 치명타 카드, 레벨 디자인 추가">
+    <img class="notice-image" src="assets/update-notice-20260504.png?v=20260504b" alt="2026년 5월 4일 업데이트 안내: 신규 캐릭터 도적소년, Wave 6 설원 마을 맵, 건물 충돌 개선, 걷기 모션 개선">
     <div class="notice-actions">
       <button id="closeNoticeButton" type="button">닫기</button>
     </div>
@@ -879,9 +879,9 @@
         <img class="character-preview" src="assets/player-gun-preview.png?v=preview-20260429a" alt="">
         <span>권총소녀</span>
       </button>
-      <button class="character-card" data-character="kunai" aria-label="쿠나이 캐릭터 선택">
+      <button class="character-card" data-character="kunai" aria-label="도적 캐릭터 선택">
         <img class="character-preview" src="assets/player-kunai-preview.png?v=preview-20260504a" alt="">
-        <span>쿠나이소년</span>
+        <span>도적소년</span>
       </button>
     </div>
   </section>
@@ -2115,6 +2115,7 @@ const dungeonWalls =     [
       pausedForLevelUp: false,
       levelChoices: [],
       particles: [],
+      damageTexts: [],
       bullets: [],
       zombies: [],
       pickups: [],
@@ -2271,6 +2272,7 @@ const dungeonWalls =     [
         },
       },
     ];
+    const attackUpgradeIds = new Set(["split", "damage", "rapid", "pierce", "critical"]);
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
@@ -2324,13 +2326,18 @@ const dungeonWalls =     [
       }[char]));
     }
 
-    function pickLevelChoices() {
+    function pickLevelChoices(preferAttack = false) {
       const available = levelUpgrades.filter((upgrade) => upgrade.isAvailable());
       const fallback = levelUpgrades.filter((upgrade) => !available.includes(upgrade));
-      return [
+      const choices = [
         ...available.sort(() => Math.random() - 0.5),
         ...fallback.sort(() => Math.random() - 0.5),
       ].slice(0, 3);
+      if ((preferAttack || state.level === 2) && !choices.some((upgrade) => attackUpgradeIds.has(upgrade.id))) {
+        const attackChoice = available.find((upgrade) => attackUpgradeIds.has(upgrade.id));
+        if (attackChoice) choices[choices.length - 1] = attackChoice;
+      }
+      return choices;
     }
 
     function renderLevelChoices() {
@@ -2343,9 +2350,9 @@ const dungeonWalls =     [
       `).join("");
     }
 
-    function startLevelUp() {
+    function startLevelUp(preferAttack = false) {
       state.pausedForLevelUp = true;
-      state.levelChoices = pickLevelChoices();
+      state.levelChoices = pickLevelChoices(preferAttack);
       keys.clear();
       pointer.down = false;
       resetJoystick();
@@ -2589,6 +2596,7 @@ const dungeonWalls =     [
         pausedForLevelUp: false,
         levelChoices: [],
         particles: [],
+        damageTexts: [],
         bullets: [],
         zombies: [],
         pickups: [],
@@ -2646,7 +2654,7 @@ const dungeonWalls =     [
         aura: "#7adfff",
       },
       tank: {
-        hp: 2.25,
+        hp: 1.8,
         speed: 0.72,
         damage: 18,
         radius: [24, 31],
@@ -2698,7 +2706,7 @@ const dungeonWalls =     [
       const spec = zombieTypes[type] || zombieTypes.normal;
       const radius = rand(spec.radius[0], spec.radius[1]);
       const point = getSpawnPoint(radius);
-      const baseHp = 42 + state.wave * 8;
+      const baseHp = 36 + state.wave * 5;
       const baseSpeed = rand(58, 84) + state.wave * 5;
       const z = {
         x: point.x,
@@ -2747,6 +2755,11 @@ const dungeonWalls =     [
       player.castPulse = 0.2;
       const count = clamp(Math.round(player.projectileCount), 1, player.maxProjectileCount);
       const damageByCount = [0, 34, 28, 24, 21];
+      const knockbackByStyle = {
+        magic: 15,
+        pistol: 22,
+        kunai: 19,
+      };
       const arc = player.spreadAngle * (count - 1);
       const start = -arc / 2;
       for (let i = 0; i < count; i++) {
@@ -2766,6 +2779,7 @@ const dungeonWalls =     [
           damage: crit ? Math.round(baseDamage * player.critDamage) : baseDamage,
           pierce: player.pierce,
           crit,
+          knockback: (knockbackByStyle[player.bulletStyle] || 17) + player.pierce * 3 + (crit ? 8 : 0),
           style: player.bulletStyle,
         });
       }
@@ -2860,6 +2874,18 @@ const dungeonWalls =     [
           color,
         });
       }
+    }
+
+    function addDamageText(x, y, amount, crit) {
+      state.damageTexts.push({
+        x: x + rand(-8, 8),
+        y: y + rand(-12, -2),
+        vy: crit ? -58 : -42,
+        life: crit ? 0.72 : 0.58,
+        maxLife: crit ? 0.72 : 0.58,
+        value: Math.max(1, Math.round(amount)),
+        crit,
+      });
     }
 
     function update(dt) {
@@ -2971,6 +2997,15 @@ const dungeonWalls =     [
           if (zombie.hp <= 0 || distance(bullet, zombie) > zombie.r + 4) continue;
           zombie.hp -= bullet.damage;
           zombie.hit = 0.1;
+          addDamageText(zombie.x, zombie.y - zombie.r * 0.65, bullet.damage, bullet.crit);
+          const hitAngle = Math.atan2(bullet.vy, bullet.vx);
+          const knockbackScale = zombie.isBoss ? 0.25 : zombie.type === "tank" ? 0.55 : 1;
+          moveActor(
+            zombie,
+            Math.cos(hitAngle) * bullet.knockback * knockbackScale,
+            Math.sin(hitAngle) * bullet.knockback * knockbackScale,
+            zombie.r * 0.85
+          );
           if (bullet.pierce > 0) {
             bullet.pierce -= 1;
             bullet.life = Math.max(0, bullet.life - 0.08);
@@ -3017,6 +3052,13 @@ const dungeonWalls =     [
       }
       state.particles = state.particles.filter((p) => p.life > 0);
 
+      for (const text of state.damageTexts) {
+        text.y += text.vy * dt;
+        text.vy *= 0.92;
+        text.life -= dt;
+      }
+      state.damageTexts = state.damageTexts.filter((text) => text.life > 0);
+
       updateCamera();
       updateHud();
     }
@@ -3024,7 +3066,7 @@ const dungeonWalls =     [
     function killZombie(zombie) {
       state.score += Math.round((100 + state.wave * 12) * (zombie.scoreMult || 1));
       state.waveKills += zombie.waveValue || 1;
-      puff(zombie.x, zombie.y, zombie.aura || "#587747", zombie.isBoss ? 42 : 18, zombie.isBoss ? 260 : 180);
+      puff(zombie.x, zombie.y, zombie.aura || "#587747", zombie.isBoss ? 60 : 26, zombie.isBoss ? 310 : 220);
       state.pickups.push({
         x: zombie.x + rand(-10, 10),
         y: zombie.y + rand(-10, 10),
@@ -3051,6 +3093,9 @@ const dungeonWalls =     [
           spin: 0,
           life: 9.5,
         });
+      }
+      if (zombie.isBoss && !state.pausedForLevelUp) {
+        startLevelUp(true);
       }
       if (state.waveKills >= state.nextWaveKills) {
         state.wave += 1;
@@ -3103,6 +3148,7 @@ const dungeonWalls =     [
       drawZombies();
       drawPlayer();
       drawParticles();
+      drawDamageTexts();
       ctx.restore();
       drawVignette(w, h);
       drawMapTransition(w, h);
@@ -3417,6 +3463,28 @@ const dungeonWalls =     [
         ctx.fill();
       }
       ctx.globalAlpha = 1;
+    }
+
+    function drawDamageTexts() {
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (const text of state.damageTexts) {
+        const pct = clamp(text.life / text.maxLife, 0, 1);
+        const scale = text.crit ? 1.12 + (1 - pct) * 0.26 : 0.92 + (1 - pct) * 0.16;
+        ctx.save();
+        ctx.translate(text.x, text.y);
+        ctx.scale(scale, scale);
+        ctx.globalAlpha = Math.min(1, pct * 1.5);
+        ctx.font = `${text.crit ? "900 18px" : "900 14px"} ui-sans-serif, system-ui, sans-serif`;
+        ctx.lineWidth = text.crit ? 5 : 4;
+        ctx.strokeStyle = "rgba(33, 14, 36, 0.78)";
+        ctx.fillStyle = text.crit ? "#ffd77e" : "#fff8ff";
+        ctx.strokeText(text.value, 0, 0);
+        ctx.fillText(text.value, 0, 0);
+        ctx.restore();
+      }
+      ctx.restore();
     }
 
     function drawVignette(w, h) {
