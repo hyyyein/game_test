@@ -7,7 +7,7 @@
   <meta name="description" content="귀여운 캐릭터로 루이 웨이브를 버티는 생존 슈팅 게임. 탄환 강화 아이템으로 2갈래, 3갈래, 4갈래까지 살아남기!">
   <meta property="og:type" content="website">
   <meta property="og:title" content="루이에게서 살아남기">
-  <meta property="og:description" content="탄환 강화 아이템 추가! 2갈래, 3갈래, 4갈래로 살아남기.">
+  <meta property="og:description" content="좀비에 감염된 루이에게서 도망쳐 !!">
   <meta property="og:url" content="https://hyyyein.github.io/game_test/">
   <meta property="og:image" content="https://hyyyein.github.io/game_test/assets/og-image.png?v=20260430a">
   <meta property="og:image:width" content="1200">
@@ -15,7 +15,7 @@
   <meta property="og:image:alt" content="마법소녀와 권총소녀가 등을 맞대고 서 있는 루이에게서 살아남기 게임 이미지">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="루이에게서 살아남기">
-  <meta name="twitter:description" content="탄환 강화 아이템 추가! 2갈래, 3갈래, 4갈래로 살아남기.">
+  <meta name="twitter:description" content="좀비에 감염된 루이에게서 도망쳐 !!">
   <meta name="twitter:image" content="https://hyyyein.github.io/game_test/assets/og-image.png?v=20260430a">
   <style>
     :root {
@@ -45,6 +45,7 @@
       background: var(--bg);
       color: var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overscroll-behavior: none;
     }
 
     body {
@@ -54,10 +55,11 @@
 
     canvas {
       width: 100vw;
-      height: 100vh;
+      height: 100dvh;
       display: block;
       cursor: crosshair;
       background: #111712;
+      touch-action: none;
     }
 
     .hud {
@@ -273,16 +275,16 @@
 
     .touch-controls {
       position: fixed;
-      inset: auto 16px 18px 16px;
+      inset: 0;
       display: none;
-      align-items: flex-end;
-      justify-content: space-between;
       pointer-events: none;
       z-index: 5;
     }
 
     .joystick {
-      position: relative;
+      position: fixed;
+      left: 90px;
+      top: calc(100dvh - 112px);
       width: 132px;
       height: 132px;
       border: 1px solid var(--line);
@@ -290,11 +292,20 @@
       background:
         radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.28), rgba(255, 173, 219, 0.16) 45%, rgba(168, 221, 255, 0.18)),
         var(--panel-strong);
-      pointer-events: auto;
+      pointer-events: none;
       touch-action: none;
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.92);
+      transition: opacity 120ms ease, transform 120ms ease;
       box-shadow:
         0 12px 26px rgba(67, 28, 72, 0.22),
         inset 0 1px 0 rgba(255, 255, 255, 0.62);
+    }
+
+    .joystick.is-active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
     }
 
     .stick {
@@ -313,6 +324,9 @@
     }
 
     .actions {
+      position: fixed;
+      right: calc(16px + env(safe-area-inset-right));
+      bottom: calc(18px + env(safe-area-inset-bottom));
       display: flex;
       gap: 10px;
       pointer-events: auto;
@@ -358,6 +372,95 @@
       height: 58px;
       align-self: flex-end;
       font-size: 19px;
+    }
+
+    .pause-button {
+      position: fixed;
+      top: calc(14px + env(safe-area-inset-top));
+      right: calc(14px + env(safe-area-inset-right));
+      z-index: 12;
+      display: none;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0;
+      border: 2px solid rgba(255, 245, 253, 0.88);
+      outline: 0;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.34), transparent 34%),
+        linear-gradient(135deg, rgba(255, 181, 229, 0.96), rgba(212, 188, 255, 0.9)),
+        rgba(255, 143, 211, 0.82);
+      color: var(--text);
+      pointer-events: auto;
+      -webkit-tap-highlight-color: transparent;
+      backdrop-filter: blur(10px) saturate(1.18);
+      box-shadow:
+        0 0 0 3px rgba(255, 154, 218, 0.72),
+        0 0 0 5px rgba(177, 217, 255, 0.55),
+        0 8px 18px rgba(255, 105, 190, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.54);
+    }
+
+    .pause-button:focus {
+      outline: 0;
+    }
+
+    .pause-button::before,
+    .pause-button::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 6px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fff8ff, #ffe3f5);
+      box-shadow:
+        0 0 10px rgba(255, 238, 249, 0.38),
+        0 1px 4px rgba(130, 54, 112, 0.12);
+    }
+
+    .pause-button::before {
+      transform: translate(calc(-50% - 5px), -50%);
+    }
+
+    .pause-button::after {
+      transform: translate(calc(-50% + 5px), -50%);
+    }
+
+    body.is-paused .pause-button {
+      border: 2px solid rgba(255, 245, 253, 0.88);
+      background:
+        radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.28), transparent 34%),
+        linear-gradient(135deg, #ffb3e5 0%, #ff93d5 58%, #c9c0ff 100%);
+      box-shadow:
+        0 0 0 3px rgba(255, 154, 218, 0.72),
+        0 0 0 5px rgba(177, 217, 255, 0.55),
+        0 8px 18px rgba(255, 105, 190, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.58);
+    }
+
+    body.is-paused .pause-button::before {
+      left: 53%;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 10px 0 10px 16px;
+      border-color: transparent transparent transparent rgba(55, 28, 50, 0.94);
+      border-radius: 3px;
+      background: transparent;
+      box-shadow: 0 2px 7px rgba(45, 12, 38, 0.22);
+      transform: translate(-50%, -50%);
+    }
+
+    body.is-paused .pause-button::after {
+      display: none;
+    }
+
+    body.is-running .pause-button {
+      display: block;
     }
 
     .name-input {
@@ -670,32 +773,37 @@
     }
 
     @media (max-width: 720px) {
+      html,
+      body {
+        height: 100dvh;
+      }
+
       .hud {
-        inset: 10px;
+        inset: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) auto calc(8px + env(safe-area-inset-left));
         align-items: stretch;
       }
 
       .cluster {
         display: grid;
-        grid-template-columns: minmax(92px, 1.35fr) repeat(4, minmax(48px, 0.7fr));
-        gap: 6px;
+        grid-template-columns: minmax(88px, 1.2fr) repeat(4, minmax(44px, 0.7fr));
+        gap: 5px;
         max-width: 100%;
         width: 100%;
       }
 
       .pill {
         min-width: 0;
-        height: 42px;
-        padding: 7px 8px;
+        height: 39px;
+        padding: 6px 7px;
       }
 
       .label {
-        font-size: 10px;
+        font-size: 9px;
       }
 
       .value {
         margin-top: 4px;
-        font-size: 14px;
+        font-size: 13px;
       }
 
       .bar {
@@ -713,12 +821,91 @@
         display: none;
       }
 
+      .banner {
+        width: min(390px, calc(100vw - 20px));
+        max-height: calc(100dvh - 24px);
+        padding: 18px;
+        overflow: auto;
+      }
+
+      .banner h1 {
+        font-size: clamp(28px, 10vw, 40px);
+      }
+
+      .banner p {
+        margin-bottom: 14px;
+        font-size: 14px;
+      }
+
+      button {
+        min-width: 132px;
+      }
+
       body.is-running .touch-controls {
-        display: flex;
+        display: block;
+      }
+
+      .joystick {
+        width: 118px;
+        height: 118px;
+      }
+
+      .stick {
+        width: 48px;
+        height: 48px;
+      }
+
+      .actions {
+        right: calc(14px + env(safe-area-inset-right));
+        bottom: calc(16px + env(safe-area-inset-bottom));
+      }
+
+      .touch-btn.fire {
+        display: none;
+      }
+
+      .touch-btn.dash {
+        width: 76px;
+        height: 76px;
+        min-width: 76px;
+        min-height: 76px;
+        border-radius: 50%;
+        font-size: 24px;
+      }
+
+      .pause-button {
+        top: calc(72px + env(safe-area-inset-top));
+        right: calc(14px + env(safe-area-inset-right));
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        min-height: 42px;
+      }
+
+      .pause-button::before,
+      .pause-button::after {
+        width: 5px;
+        height: 17px;
+      }
+
+      .pause-button::before {
+        transform: translate(calc(-50% - 5px), -50%);
+      }
+
+      .pause-button::after {
+        transform: translate(calc(-50% + 5px), -50%);
+      }
+
+      body.is-paused .pause-button::before {
+        border-width: 9px 0 9px 15px;
+        transform: translate(-50%, -50%);
       }
 
       .character-select {
         width: min(430px, calc(100vw - 24px));
+        max-height: calc(100dvh - 24px);
+        overflow: auto;
+        padding: 16px;
       }
 
       .character-grid {
@@ -726,27 +913,28 @@
       }
 
       .character-card {
-        min-height: 182px;
-        padding: 9px;
+        min-height: 162px;
+        padding: 8px;
       }
 
       .character-preview {
-        width: 106px;
-        height: 106px;
+        width: 96px;
+        height: 96px;
       }
 
       .notice-screen {
         width: min(390px, calc(100vw - 18px));
+        max-height: calc(100dvh - 18px);
         padding: 10px;
       }
 
       .notice-image {
-        max-height: calc(100vh - 104px);
+        max-height: calc(100dvh - 104px);
       }
 
       .game-over {
         width: min(520px, calc(100vw - 24px));
-        max-height: calc(100vh - 24px);
+        max-height: calc(100dvh - 24px);
         padding: 22px 24px 28px;
       }
 
@@ -773,11 +961,13 @@
       }
 
       .level-up-screen {
-        padding: 10px;
+        padding: calc(10px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
       }
 
       .level-up-panel {
         width: min(390px, calc(100vw - 18px));
+        max-height: calc(100dvh - 20px);
+        overflow: auto;
         padding: 12px;
       }
 
@@ -812,6 +1002,25 @@
       }
 
     }
+
+    @media (pointer: coarse) and (min-width: 721px) {
+      body.is-running .touch-controls {
+        display: block;
+      }
+
+      .touch-btn.fire {
+        display: none;
+      }
+
+      .touch-btn.dash {
+        width: 76px;
+        height: 76px;
+        min-width: 76px;
+        min-height: 76px;
+        border-radius: 50%;
+        font-size: 24px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -844,10 +1053,12 @@
     <div class="help">WASD/조이스틱 이동, 클릭 또는 Space로 사격. R로 재장전, Shift로 짧은 회피.</div>
   </div>
 
+  <button class="pause-button" id="pauseButton" type="button" aria-label="일시정지"></button>
+
   <section class="banner" id="startScreen">
     <h1>루이에게서 살아남기</h1>
     <p>사나운 루이를 빨리 처치해.<br>웨이브가 올라갈수록 더 빠르고 더 많이 올거야.</p>
-    <input class="name-input" id="nicknameInput" maxlength="14" placeholder="닉네임" autocomplete="nickname">
+    <input class="name-input" id="nicknameInput" maxlength="14" placeholder="닉네임" autocomplete="off">
     <div class="start-actions">
       <button id="startButton">Start Run</button>
       <button id="scoreboardButton" type="button">점수판</button>
@@ -926,6 +1137,7 @@
     const startButton = document.querySelector("#startButton");
     const scoreboardButton = document.querySelector("#scoreboardButton");
     const noticeButton = document.querySelector("#noticeButton");
+    const pauseButton = document.querySelector("#pauseButton");
     const closeScoreButton = document.querySelector("#closeScoreButton");
     const closeNoticeButton = document.querySelector("#closeNoticeButton");
     const restartButton = document.querySelector("#restartButton");
@@ -958,7 +1170,13 @@
     const pointer = { x: 0, y: 0, down: false };
     const joystickState = { active: false, x: 0, y: 0, pointerId: null };
     const inputDeadZone = 0.08;
+    const mobileViewportQuery = window.matchMedia("(pointer: coarse), (max-width: 720px)");
+    const mobileViewScale = 0.85;
     const leaderboardKey = "dead-block-run-leaderboard";
+    const leaderboardLimit = 10;
+    const nicknameMaxLength = 14;
+    const maxLeaderboardScore = 999999999;
+    const maxLeaderboardWave = 999;
     const supabaseUrl = "https://dmlqjfdmskbmvyoxkcfb.supabase.co";
     const supabaseKey = "sb_publishable_gzzIPnzNNN5WfgAXyg_LxQ_hwc6olW5";
     const scoresEndpoint = `${supabaseUrl}/rest/v1/scores`;
@@ -2099,6 +2317,8 @@ const dungeonWalls =     [
     };
     const state = {
       running: false,
+      paused: false,
+      loopToken: 0,
       last: 0,
       score: 0,
       mapKey: "dungeon",
@@ -2295,8 +2515,28 @@ const dungeonWalls =     [
     }
 
     function updateCamera() {
-      camera.x = clamp(player.x - window.innerWidth / 2, 0, world.w - window.innerWidth);
-      camera.y = clamp(player.y - window.innerHeight / 2, 0, world.h - window.innerHeight);
+      const viewport = getViewport();
+      camera.x = clamp(player.x - viewport.worldW / 2, 0, Math.max(0, world.w - viewport.worldW));
+      camera.y = clamp(player.y - viewport.worldH / 2, 0, Math.max(0, world.h - viewport.worldH));
+    }
+
+    function isMobileViewport() {
+      return mobileViewportQuery.matches;
+    }
+
+    function getViewScale() {
+      return isMobileViewport() ? mobileViewScale : 1;
+    }
+
+    function getViewport() {
+      const scale = getViewScale();
+      return {
+        scale,
+        screenW: window.innerWidth,
+        screenH: window.innerHeight,
+        worldW: window.innerWidth / scale,
+        worldH: window.innerHeight / scale,
+      };
     }
 
     function isMoveKey(code) {
@@ -2305,7 +2545,27 @@ const dungeonWalls =     [
     }
 
     function cleanName(value) {
-      return (value || "").trim().slice(0, 14) || "Player";
+      return String(value || "")
+        .normalize("NFKC")
+        .replace(/[^\p{L}\p{N} _-]/gu, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, nicknameMaxLength) || "Player";
+    }
+
+    function cleanLeaderboardNumber(value, fallback, max) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return fallback;
+      return clamp(Math.floor(number), 0, max);
+    }
+
+    function cleanScoreEntry(entry) {
+      return {
+        name: cleanName(entry?.name || entry?.nickname),
+        score: cleanLeaderboardNumber(entry?.score, 0, maxLeaderboardScore),
+        wave: cleanLeaderboardNumber(entry?.wave, 1, maxLeaderboardWave),
+        date: cleanLeaderboardNumber(entry?.date, Date.now(), Date.now()),
+      };
     }
 
     function applyCharacter(key) {
@@ -2387,7 +2647,7 @@ const dungeonWalls =     [
     function loadLeaderboard() {
       try {
         const entries = JSON.parse(localStorage.getItem(leaderboardKey) || "[]");
-        return Array.isArray(entries) ? entries : [];
+        return Array.isArray(entries) ? entries.map(cleanScoreEntry) : [];
       } catch {
         return [];
       }
@@ -2397,7 +2657,7 @@ const dungeonWalls =     [
       const params = new URLSearchParams({
         select: "nickname,score,wave,created_at",
         order: "score.desc,wave.desc,created_at.asc",
-        limit: "10",
+        limit: String(leaderboardLimit),
       });
       const response = await fetch(`${scoresEndpoint}?${params}`, {
         headers: {
@@ -2407,15 +2667,16 @@ const dungeonWalls =     [
       });
       if (!response.ok) throw new Error(`Leaderboard fetch failed: ${response.status}`);
       const entries = await response.json();
-      return entries.map((entry) => ({
+      return entries.map((entry) => cleanScoreEntry({
         name: entry.nickname,
-        score: Number(entry.score) || 0,
-        wave: Number(entry.wave) || 1,
-        date: new Date(entry.created_at).getTime() || Date.now(),
+        score: entry.score,
+        wave: entry.wave,
+        date: new Date(entry.created_at).getTime(),
       }));
     }
 
     async function uploadOnlineScore(entry) {
+      const safeEntry = cleanScoreEntry(entry);
       const response = await fetch(scoresEndpoint, {
         method: "POST",
         headers: {
@@ -2425,9 +2686,9 @@ const dungeonWalls =     [
           Prefer: "return=minimal",
         },
         body: JSON.stringify({
-          nickname: entry.name,
-          score: entry.score,
-          wave: entry.wave,
+          nickname: safeEntry.name,
+          score: safeEntry.score,
+          wave: safeEntry.wave,
         }),
       });
       if (!response.ok) throw new Error(`Score upload failed: ${response.status}`);
@@ -2435,15 +2696,15 @@ const dungeonWalls =     [
 
     async function saveScore() {
       const entries = loadLeaderboard();
-      const entry = {
+      const entry = cleanScoreEntry({
         name: player.name,
         score: state.score,
         wave: state.wave,
         date: Date.now(),
-      };
+      });
       entries.push(entry);
       entries.sort((a, b) => b.score - a.score || b.wave - a.wave || a.date - b.date);
-      localStorage.setItem(leaderboardKey, JSON.stringify(entries.slice(0, 10)));
+      localStorage.setItem(leaderboardKey, JSON.stringify(entries.slice(0, leaderboardLimit)));
       try {
         await uploadOnlineScore(entry);
       } catch {
@@ -2454,7 +2715,7 @@ const dungeonWalls =     [
 
     function paintLeaderboard(target, entries) {
       target.innerHTML = entries.length
-        ? entries.slice(0, 10).map((entry, index) => {
+        ? entries.slice(0, leaderboardLimit).map((entry, index) => {
             const rank = index + 1;
             return `<li class="rank-row">
               <span class="rank-number">${rank}.</span>
@@ -2541,9 +2802,12 @@ const dungeonWalls =     [
       canvas.width = Math.floor(window.innerWidth * dpr);
       canvas.height = Math.floor(window.innerHeight * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (state.running) updateCamera();
     }
 
     function resetGame() {
+      state.loopToken += 1;
+      const loopToken = state.loopToken;
       applyCharacter(selectedCharacter);
       bgm.currentTime = 0;
       bgm.play().catch(() => {});
@@ -2580,6 +2844,7 @@ const dungeonWalls =     [
       localStorage.setItem("dead-block-run-name", player.name);
       Object.assign(state, {
         running: true,
+        paused: false,
         last: performance.now(),
         score: 0,
         mapKey: mapKeyForWave(1),
@@ -2604,6 +2869,7 @@ const dungeonWalls =     [
       state.props = makeProps();
       spawnPack(5);
       document.body.classList.add("is-running");
+      document.body.classList.remove("is-paused");
       startScreen.classList.add("hidden");
       scoreScreen.classList.add("hidden");
       noticeScreen.classList.add("hidden");
@@ -2612,7 +2878,7 @@ const dungeonWalls =     [
       levelUpScreen.classList.add("hidden");
       levelCardGrid.innerHTML = "";
       updateHud();
-      requestAnimationFrame(loop);
+      requestAnimationFrame((now) => loop(now, loopToken));
     }
 
     function makeProps() {
@@ -2844,8 +3110,9 @@ const dungeonWalls =     [
 
     function getPointerAimVector() {
       const rect = canvas.getBoundingClientRect();
-      const targetX = camera.x + pointer.x - rect.left;
-      const targetY = camera.y + pointer.y - rect.top;
+      const scale = getViewScale();
+      const targetX = camera.x + (pointer.x - rect.left) / scale;
+      const targetY = camera.y + (pointer.y - rect.top) / scale;
       return {
         x: targetX - player.x,
         y: targetY - player.y,
@@ -2907,7 +3174,7 @@ const dungeonWalls =     [
       const move = getMoveVector();
       const moveLen = Math.hypot(move.x, move.y);
       const dashBoost = player.dash > 0 ? 2.7 : 1;
-      const shooting = pointer.down || keys.has("Space");
+      const shooting = isMobileViewport() ? true : pointer.down || keys.has("Space");
       player.moving = moveLen > 0;
       if (player.moving) {
         player.animTime += dt * dashBoost;
@@ -3111,15 +3378,44 @@ const dungeonWalls =     [
 
     function endGame() {
       state.running = false;
+      state.paused = false;
       state.pausedForLevelUp = false;
       state.bossAlertTimer = 0;
       bgm.pause();
       finalStats.textContent = `Score ${state.score} · Wave ${state.wave}`;
       saveScore();
       document.body.classList.remove("is-running");
+      document.body.classList.remove("is-paused");
+      resetJoystick();
       scoreScreen.classList.add("hidden");
       levelUpScreen.classList.add("hidden");
       gameOverScreen.classList.remove("hidden");
+    }
+
+    function pauseGame() {
+      if (!state.running || state.paused || state.pausedForLevelUp) return;
+      state.paused = true;
+      keys.clear();
+      pointer.down = false;
+      resetJoystick();
+      bgm.pause();
+      document.body.classList.add("is-paused");
+    }
+
+    function resumeGame() {
+      if (!state.running || !state.paused) return;
+      state.paused = false;
+      state.last = performance.now();
+      document.body.classList.remove("is-paused");
+      bgm.play().catch(() => {});
+    }
+
+    function togglePause() {
+      if (state.paused) {
+        resumeGame();
+      } else {
+        pauseGame();
+      }
     }
 
     function getActiveBoss() {
@@ -3136,10 +3432,12 @@ const dungeonWalls =     [
     }
 
     function draw() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const viewport = getViewport();
+      const w = viewport.screenW;
+      const h = viewport.screenH;
       ctx.clearRect(0, 0, w, h);
       ctx.save();
+      ctx.scale(viewport.scale, viewport.scale);
       ctx.translate(-camera.x, -camera.y);
       drawGround();
       drawProps();
@@ -3560,17 +3858,29 @@ const dungeonWalls =     [
       }
     }
 
-    function loop(now) {
+    function loop(now, loopToken = state.loopToken) {
+      if (loopToken !== state.loopToken) return;
       if (!state.running) return;
+      if (state.paused) {
+        state.last = now;
+        requestAnimationFrame((next) => loop(next, loopToken));
+        return;
+      }
       const dt = Math.min(0.033, (now - state.last) / 1000);
       state.last = now;
       update(dt);
       draw();
-      requestAnimationFrame(loop);
+      requestAnimationFrame((next) => loop(next, loopToken));
     }
 
     window.addEventListener("resize", resize);
     window.addEventListener("keydown", (event) => {
+      if (event.code === "Escape") {
+        event.preventDefault();
+        togglePause();
+        return;
+      }
+      if (state.paused) return;
       keys.add(event.code);
       if (event.code === "KeyR") reload();
       if (event.code === "Space") event.preventDefault();
@@ -3580,16 +3890,57 @@ const dungeonWalls =     [
       }
     });
     window.addEventListener("keyup", (event) => keys.delete(event.code));
+
+    function canStartFloatingJoystick(event) {
+      if (!isMobileViewport() || !state.running || state.paused) return false;
+      if (event.target.closest?.(".touch-btn, .pause-button")) return false;
+      return event.clientX <= window.innerWidth * 0.72 || event.clientY >= window.innerHeight * 0.42;
+    }
+
+    function startFloatingJoystick(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      pointer.down = false;
+      const radius = joystick.offsetWidth / 2 || 59;
+      const pad = 12;
+      const x = clamp(event.clientX, radius + pad, window.innerWidth - radius - pad);
+      const y = clamp(event.clientY, radius + pad, window.innerHeight - radius - pad);
+      joystick.style.left = `${x}px`;
+      joystick.style.top = `${y}px`;
+      joystick.classList.add("is-active");
+      joystickState.active = true;
+      joystickState.pointerId = event.pointerId;
+      if (event.target.setPointerCapture) {
+        try {
+          event.target.setPointerCapture(event.pointerId);
+        } catch {
+          // Some browsers only allow capture on the original pointer target.
+        }
+      }
+      updateJoystick(event);
+    }
+
     window.addEventListener("pointermove", (event) => {
       pointer.x = event.clientX;
       pointer.y = event.clientY;
     });
     window.addEventListener("pointerdown", (event) => {
+      if (event.target.closest?.(".pause-button")) return;
+      if (isMobileViewport()) {
+        if (canStartFloatingJoystick(event)) startFloatingJoystick(event);
+        pointer.down = false;
+        return;
+      }
       pointer.down = true;
       pointer.x = event.clientX;
       pointer.y = event.clientY;
     });
-    window.addEventListener("pointerup", () => {
+    window.addEventListener("pointerup", (event) => {
+      if (joystickState.pointerId === event.pointerId) resetJoystick();
+      pointer.down = false;
+    });
+    window.addEventListener("pointercancel", (event) => {
+      if (joystickState.pointerId === event.pointerId) resetJoystick();
       pointer.down = false;
     });
 
@@ -3603,6 +3954,7 @@ const dungeonWalls =     [
       button.addEventListener("pointerdown", (event) => {
         event.preventDefault();
         event.stopPropagation();
+        if (state.paused) return;
         button.setPointerCapture(event.pointerId);
         const key = button.dataset.key;
         if (key) keys.add(key);
@@ -3642,6 +3994,7 @@ const dungeonWalls =     [
       joystickState.x = 0;
       joystickState.y = 0;
       joystickState.pointerId = null;
+      joystick.classList.remove("is-active");
       stick.style.transform = "translate(-50%, -50%)";
     }
 
@@ -3697,6 +4050,10 @@ const dungeonWalls =     [
     closeNoticeButton.addEventListener("click", () => {
       noticeScreen.classList.add("hidden");
       if (!state.running) startScreen.classList.remove("hidden");
+    });
+    pauseButton.addEventListener("click", togglePause);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) pauseGame();
     });
     for (const card of characterCards) {
       card.addEventListener("click", () => {
