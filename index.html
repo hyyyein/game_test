@@ -463,6 +463,159 @@
       display: block;
     }
 
+    .magic-inventory {
+      position: fixed;
+      top: calc(172px + env(safe-area-inset-top));
+      right: calc(14px + env(safe-area-inset-right));
+      z-index: 11;
+      display: grid;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .magic-inventory.hidden,
+    .magic-item-toast.hidden {
+      display: none;
+    }
+
+    #magicInventorySlots {
+      display: grid;
+      gap: 8px;
+    }
+
+    .magic-slot {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      border: 1px solid rgba(255, 226, 246, 0.66);
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.26), transparent 34%),
+        linear-gradient(135deg, rgba(255, 226, 246, 0.2), rgba(168, 221, 255, 0.12)),
+        rgba(43, 31, 58, 0.66);
+      box-shadow:
+        0 10px 22px rgba(67, 28, 72, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.46);
+      backdrop-filter: blur(12px) saturate(1.18);
+    }
+
+    .magic-slot.is-empty {
+      opacity: 0.42;
+    }
+
+    .magic-slot.is-rare {
+      border-color: rgba(255, 159, 214, 0.92);
+      box-shadow:
+        0 0 16px rgba(255, 143, 230, 0.28),
+        0 10px 22px rgba(67, 28, 72, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .magic-slot img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 3px 4px rgba(31, 12, 33, 0.28));
+    }
+
+    .magic-count {
+      position: absolute;
+      right: -5px;
+      bottom: -5px;
+      min-width: 21px;
+      height: 21px;
+      padding: 0 5px;
+      border: 1px solid rgba(255, 248, 255, 0.78);
+      border-radius: 999px;
+      background: linear-gradient(135deg, #ffe2f3, #ff9fd6, #a8ddff);
+      color: #40243a;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 19px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(255, 124, 198, 0.24);
+    }
+
+    .magic-item-toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(24px + env(safe-area-inset-bottom));
+      z-index: 16;
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      width: min(420px, calc(100vw - 28px));
+      padding: 11px 13px;
+      border: 1px solid rgba(255, 226, 246, 0.7);
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.24), transparent 36%),
+        linear-gradient(135deg, rgba(255, 226, 246, 0.2), rgba(168, 221, 255, 0.12)),
+        rgba(43, 31, 58, 0.82);
+      color: var(--text);
+      transform: translateX(-50%);
+      box-shadow:
+        0 16px 34px rgba(26, 12, 34, 0.38),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(14px) saturate(1.2);
+      pointer-events: none;
+    }
+
+    .magic-item-toast.is-rare {
+      border-color: rgba(255, 159, 214, 0.96);
+      box-shadow:
+        0 0 24px rgba(255, 143, 230, 0.28),
+        0 16px 34px rgba(26, 12, 34, 0.38),
+        inset 0 1px 0 rgba(255, 255, 255, 0.54);
+    }
+
+    .magic-toast-icon {
+      display: grid;
+      place-items: center;
+      width: 58px;
+      height: 58px;
+      border-radius: 8px;
+      background: rgba(255, 248, 255, 0.12);
+      box-shadow: inset 0 0 0 1px rgba(255, 226, 246, 0.34);
+    }
+
+    .magic-toast-icon img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+
+    .magic-toast-copy {
+      min-width: 0;
+      text-align: left;
+    }
+
+    .magic-toast-name {
+      color: #fff8ff;
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1.15;
+      text-shadow: 0 0 12px rgba(255, 143, 230, 0.42);
+    }
+
+    .magic-toast-desc,
+    .magic-toast-effect {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .magic-toast-effect {
+      color: #ffdff3;
+    }
+
     .name-input {
       width: min(260px, 100%);
       height: 42px;
@@ -901,6 +1054,63 @@
         transform: translate(-50%, -50%);
       }
 
+      .magic-inventory {
+        top: calc(121px + env(safe-area-inset-top));
+        right: calc(10px + env(safe-area-inset-right));
+        gap: 5px;
+      }
+
+      #magicInventorySlots {
+        gap: 5px;
+      }
+
+      .magic-slot {
+        width: 42px;
+        height: 42px;
+      }
+
+      .magic-slot img {
+        width: 32px;
+        height: 32px;
+      }
+
+      .magic-count {
+        right: -4px;
+        bottom: -4px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        font-size: 10px;
+        line-height: 16px;
+      }
+
+      .magic-item-toast {
+        bottom: calc(104px + env(safe-area-inset-bottom));
+        grid-template-columns: 46px minmax(0, 1fr);
+        gap: 9px;
+        width: min(360px, calc(100vw - 20px));
+        padding: 9px 10px;
+      }
+
+      .magic-toast-icon {
+        width: 46px;
+        height: 46px;
+      }
+
+      .magic-toast-icon img {
+        width: 38px;
+        height: 38px;
+      }
+
+      .magic-toast-name {
+        font-size: 14px;
+      }
+
+      .magic-toast-desc,
+      .magic-toast-effect {
+        font-size: 10px;
+      }
+
       .character-select {
         width: min(430px, calc(100vw - 24px));
         max-height: calc(100dvh - 24px);
@@ -1055,6 +1265,12 @@
 
   <button class="pause-button" id="pauseButton" type="button" aria-label="일시정지"></button>
 
+  <aside class="magic-inventory hidden" id="magicInventory" aria-label="마법소녀 아이템 인벤토리">
+    <div id="magicInventorySlots"></div>
+  </aside>
+
+  <div class="magic-item-toast hidden" id="magicItemToast" role="status" aria-live="polite"></div>
+
   <section class="banner" id="startScreen">
     <h1>루이에게서 살아남기</h1>
     <p>사나운 루이를 빨리 처치해.<br>웨이브가 올라갈수록 더 빠르고 더 많이 올거야.</p>
@@ -1148,10 +1364,14 @@
     const noticeScreen = document.querySelector("#noticeScreen");
     const levelUpScreen = document.querySelector("#levelUpScreen");
     const levelCardGrid = document.querySelector("#levelCardGrid");
+    const magicInventory = document.querySelector("#magicInventory");
+    const magicInventorySlots = document.querySelector("#magicInventorySlots");
+    const magicItemToast = document.querySelector("#magicItemToast");
     const characterCards = document.querySelectorAll(".character-card");
     const touchButtons = document.querySelectorAll(".touch-btn");
     const joystick = document.querySelector("#joystick");
     const stick = document.querySelector("#stick");
+    let magicToastTimer = null;
     const playerImage = new Image();
     playerImage.src = "assets/player-gun-spritesheet.png?v=8dir-aligned-20260429c";
     const monsterImage = new Image();
@@ -2340,6 +2560,7 @@ const dungeonWalls =     [
       zombies: [],
       nextZombieId: 1,
       pickups: [],
+      magicInventory: {},
       props: [],
     };
 
@@ -2352,7 +2573,9 @@ const dungeonWalls =     [
       speed: 260,
       dash: 0,
       dashCooldown: 0,
+      dashCooldownMultiplier: 1,
       invulnerable: 0,
+      hurtInvulnerability: 0.55,
       ammo: 24,
       maxAmmo: 24,
       projectileCount: 1,
@@ -2513,6 +2736,67 @@ const dungeonWalls =     [
       },
     ];
     const attackUpgradeIds = new Set(["split", "damage", "rapid", "pierce", "critical", "orb"]);
+    const magicItems = [
+      {
+        id: "lost-panty",
+        name: "잃어버린 팬티",
+        description: "마법소녀가 잃어버린 행운 부적.",
+        effect: "구체 +1, 구체 데미지 +4, 피격 무적시간 증가",
+        icon: "assets/item-lost-panty.png?v=20260518a",
+        rarity: "rare",
+        weight: 6,
+        apply: () => {
+          player.orbCount = Math.min(3, player.orbCount + 1);
+          player.orbDamage = Math.min(34, player.orbDamage + 4);
+          player.hurtInvulnerability = Math.min(0.8, player.hurtInvulnerability + 0.06);
+        },
+      },
+      {
+        id: "strawberry-cake",
+        name: "달콤한 딸기케이크",
+        description: "폭신한 크림과 딸기의 회복 간식.",
+        effect: "최대 HP +18, 즉시 HP +30",
+        icon: "assets/item-strawberry-cake.png?v=20260518a",
+        rarity: "common",
+        weight: 32,
+        apply: () => {
+          player.maxHp = Math.min(260, player.maxHp + 18);
+          player.hp = Math.min(player.maxHp, player.hp + 30);
+        },
+      },
+      {
+        id: "caramel-pudding",
+        name: "탱글한 카라멜푸딩",
+        description: "미끄러지듯 빠르게 빠져나가는 디저트.",
+        effect: "대시 쿨타임 -8%, 이동속도 +4%",
+        icon: "assets/item-caramel-pudding.png?v=20260518a",
+        rarity: "common",
+        weight: 32,
+        apply: () => {
+          player.dashCooldownMultiplier = Math.max(0.65, player.dashCooldownMultiplier * 0.92);
+          player.speed = Math.min(430, Math.round(player.speed * 1.04));
+        },
+      },
+      {
+        id: "matcha-latte",
+        name: "씁슬한 말차라떼",
+        description: "정신이 번쩍 드는 녹색 주문 음료.",
+        effect: "발사 쿨타임 -5%, 구체 회전속도 증가",
+        icon: "assets/item-matcha-latte.png?v=20260518a",
+        rarity: "common",
+        weight: 30,
+        apply: () => {
+          player.fireDelay = Math.max(0.055, player.fireDelay * 0.95);
+          player.orbSpeed = Math.min(3.2, player.orbSpeed + 0.12);
+        },
+      },
+    ];
+    const magicItemById = Object.fromEntries(magicItems.map((item) => [item.id, item]));
+    const magicItemImages = Object.fromEntries(magicItems.map((item) => {
+      const image = new Image();
+      image.src = item.icon;
+      return [item.id, image];
+    }));
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
@@ -2604,6 +2888,85 @@ const dungeonWalls =     [
         "\"": "&quot;",
         "'": "&#39;",
       }[char]));
+    }
+
+    function isMagicCharacter() {
+      return player.character === "magic";
+    }
+
+    function renderMagicInventory() {
+      const shouldShow = state.running && isMagicCharacter();
+      magicInventory.classList.toggle("hidden", !shouldShow);
+      if (!shouldShow) {
+        magicInventorySlots.innerHTML = "";
+        return;
+      }
+      const inventory = state.magicInventory || {};
+      magicInventorySlots.innerHTML = magicItems.map((item) => {
+        const count = inventory[item.id] || 0;
+        return `
+          <div class="magic-slot ${count ? "" : "is-empty"} ${item.rarity === "rare" ? "is-rare" : ""}" title="${escapeHtml(item.name)}">
+            <img src="${escapeHtml(item.icon)}" alt="${escapeHtml(item.name)}">
+            ${count ? `<span class="magic-count">${count}</span>` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function showMagicItemToast(item) {
+      if (magicToastTimer) clearTimeout(magicToastTimer);
+      magicItemToast.classList.toggle("is-rare", item.rarity === "rare");
+      magicItemToast.innerHTML = `
+        <div class="magic-toast-icon">
+          <img src="${escapeHtml(item.icon)}" alt="${escapeHtml(item.name)}">
+        </div>
+        <div class="magic-toast-copy">
+          <div class="magic-toast-name">${escapeHtml(item.name)}</div>
+          <div class="magic-toast-desc">${escapeHtml(item.description)}</div>
+          <div class="magic-toast-effect">${escapeHtml(item.effect)}</div>
+        </div>
+      `;
+      magicItemToast.classList.remove("hidden");
+      magicToastTimer = setTimeout(() => {
+        magicItemToast.classList.add("hidden");
+        magicToastTimer = null;
+      }, 2400);
+    }
+
+    function pickMagicItem() {
+      const totalWeight = magicItems.reduce((sum, item) => sum + item.weight, 0);
+      let roll = rand(0, totalWeight);
+      for (const item of magicItems) {
+        roll -= item.weight;
+        if (roll <= 0) return item;
+      }
+      return magicItems[magicItems.length - 1];
+    }
+
+    function maybeDropMagicItem(zombie) {
+      if (!isMagicCharacter()) return;
+      const dropChance = zombie.isBoss ? 1 : zombie.type === "tank" || zombie.type === "charger" ? 0.03 : 0.012;
+      if (Math.random() > dropChance) return;
+      const item = pickMagicItem();
+      state.pickups.push({
+        x: zombie.x + rand(-18, 18),
+        y: zombie.y + rand(-18, 18),
+        type: "magic-item",
+        itemId: item.id,
+        spin: 0,
+        life: zombie.isBoss ? 24 : 15,
+      });
+    }
+
+    function collectMagicItem(itemId) {
+      const item = magicItemById[itemId];
+      if (!item) return;
+      state.magicInventory[item.id] = (state.magicInventory[item.id] || 0) + 1;
+      item.apply();
+      renderMagicInventory();
+      showMagicItemToast(item);
+      updateHud();
+      puff(player.x, player.y, item.rarity === "rare" ? "#fff8ff" : "#ffd0f0", item.rarity === "rare" ? 30 : 18, item.rarity === "rare" ? 230 : 170);
     }
 
     function pickLevelChoices(preferAttack = false) {
@@ -2829,6 +3192,11 @@ const dungeonWalls =     [
       state.loopToken += 1;
       const loopToken = state.loopToken;
       applyCharacter(selectedCharacter);
+      if (magicToastTimer) {
+        clearTimeout(magicToastTimer);
+        magicToastTimer = null;
+      }
+      magicItemToast.classList.add("hidden");
       bgm.currentTime = 0;
       bgm.play().catch(() => {});
       Object.assign(player, {
@@ -2859,7 +3227,9 @@ const dungeonWalls =     [
         reload: 0,
         dash: 0,
         dashCooldown: 0,
+        dashCooldownMultiplier: 1,
         invulnerable: 0,
+        hurtInvulnerability: 0.55,
         fireCooldown: 0,
         animTime: 0,
         moving: false,
@@ -2894,6 +3264,7 @@ const dungeonWalls =     [
         zombies: [],
         nextZombieId: 1,
         pickups: [],
+        magicInventory: {},
       });
       state.props = makeProps();
       spawnPack(5);
@@ -2907,6 +3278,7 @@ const dungeonWalls =     [
       levelUpScreen.classList.add("hidden");
       levelCardGrid.innerHTML = "";
       updateHud();
+      renderMagicInventory();
       requestAnimationFrame((now) => loop(now, loopToken));
     }
 
@@ -3152,7 +3524,7 @@ const dungeonWalls =     [
     function dash() {
       if (player.dashCooldown > 0) return;
       player.dash = 0.16;
-      player.dashCooldown = 1.15;
+      player.dashCooldown = 1.15 * player.dashCooldownMultiplier;
       player.invulnerable = 0.24;
     }
 
@@ -3358,7 +3730,7 @@ const dungeonWalls =     [
 
         if (distance(zombie, player) < zombie.r + player.r && player.invulnerable <= 0) {
           player.hp -= zombie.damage || 13;
-          player.invulnerable = 0.55;
+          player.invulnerable = player.hurtInvulnerability;
           zombie.x -= Math.cos(angle) * 36;
           zombie.y -= Math.sin(angle) * 36;
           puff(player.x, player.y, "#f06b59", 10, 150);
@@ -3412,9 +3784,11 @@ const dungeonWalls =     [
             player.projectileCount = Math.min(player.maxProjectileCount, player.projectileCount + 1);
           }
           if (pickup.type === "star-bomb") detonateStarBomb(pickup.x, pickup.y);
+          if (pickup.type === "magic-item") collectMagicItem(pickup.itemId);
           pickup.life = 0;
-          const pickupColor = pickup.type === "health" ? "#6fd08c" : pickup.type === "split" || pickup.type === "star-bomb" ? "#ff8fe6" : pickup.type === "xp" ? "#8fe6ff" : "#e9c46a";
-          puff(pickup.x, pickup.y, pickupColor, pickup.type === "split" || pickup.type === "star-bomb" ? 22 : 12, pickup.type === "split" || pickup.type === "star-bomb" ? 190 : 125);
+          const pickupColor = pickup.type === "health" ? "#6fd08c" : pickup.type === "split" || pickup.type === "star-bomb" || pickup.type === "magic-item" ? "#ff8fe6" : pickup.type === "xp" ? "#8fe6ff" : "#e9c46a";
+          const sparklePickup = pickup.type === "split" || pickup.type === "star-bomb" || pickup.type === "magic-item";
+          puff(pickup.x, pickup.y, pickupColor, sparklePickup ? 22 : 12, sparklePickup ? 190 : 125);
         }
         pickup.life -= dt;
       }
@@ -3461,6 +3835,7 @@ const dungeonWalls =     [
           life: 18,
         });
       }
+      maybeDropMagicItem(zombie);
       const canUpgradeShot = player.projectileCount < player.maxProjectileCount;
       const splitChance = zombie.isBoss ? 0.1 : 0.04;
       if (canUpgradeShot && Math.random() < splitChance) {
@@ -3506,6 +3881,8 @@ const dungeonWalls =     [
       document.body.classList.remove("is-running");
       document.body.classList.remove("is-paused");
       resetJoystick();
+      renderMagicInventory();
+      magicItemToast.classList.add("hidden");
       scoreScreen.classList.add("hidden");
       levelUpScreen.classList.add("hidden");
       gameOverScreen.classList.remove("hidden");
@@ -3884,6 +4261,30 @@ const dungeonWalls =     [
           ctx.lineWidth = 2;
           ctx.stroke();
           ctx.shadowBlur = 0;
+        } else if (pickup.type === "magic-item") {
+          const item = magicItemById[pickup.itemId];
+          const image = magicItemImages[pickup.itemId];
+          const rare = item?.rarity === "rare";
+          ctx.shadowColor = rare ? "#fff8ff" : "#ff8fe6";
+          ctx.shadowBlur = rare ? 22 : 14;
+          drawStar(0, 0, 6, rare ? 22 : 18, rare ? 10 : 8);
+          ctx.fillStyle = rare ? "rgba(255, 248, 255, 0.5)" : "rgba(255, 159, 214, 0.36)";
+          ctx.fill();
+          ctx.lineWidth = rare ? 3 : 2;
+          ctx.strokeStyle = rare ? "#ff9fd6" : "#fff8ff";
+          ctx.stroke();
+          ctx.rotate(-pickup.spin);
+          ctx.shadowBlur = 0;
+          if (image?.complete && image.naturalWidth) {
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(image, -17, -17, 34, 34);
+            ctx.imageSmoothingEnabled = true;
+          } else {
+            ctx.fillStyle = rare ? "#fff8ff" : "#ff8fe6";
+            ctx.beginPath();
+            ctx.arc(0, 0, 9, 0, Math.PI * 2);
+            ctx.fill();
+          }
         } else if (pickup.type === "split") {
           ctx.shadowColor = "#ff8fe6";
           ctx.shadowBlur = 16;
