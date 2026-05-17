@@ -2338,6 +2338,7 @@ const dungeonWalls =     [
       damageTexts: [],
       bullets: [],
       zombies: [],
+      nextZombieId: 1,
       pickups: [],
       props: [],
     };
@@ -2364,6 +2365,14 @@ const dungeonWalls =     [
       pierce: 0,
       critChance: 0.05,
       critDamage: 1.75,
+      orbCount: 0,
+      orbAngle: 0,
+      orbDamage: 18,
+      orbRadius: 76,
+      orbSize: 10,
+      orbSpeed: 2.4,
+      orbHitCooldown: 0.5,
+      orbHits: new Map(),
       name: "Player",
       reload: 0,
       fireCooldown: 0,
@@ -2433,6 +2442,17 @@ const dungeonWalls =     [
         },
       },
       {
+        id: "orb",
+        title: "빛나는 구체",
+        description: "몸 주변을 도는 구체 +1",
+        icon: "●",
+        tone: "pink",
+        isAvailable: () => player.orbCount < 3,
+        apply: () => {
+          player.orbCount = Math.min(3, player.orbCount + 1);
+        },
+      },
+      {
         id: "magnet",
         title: "자석+",
         description: "아이템 획득 범위 증가",
@@ -2492,7 +2512,7 @@ const dungeonWalls =     [
         },
       },
     ];
-    const attackUpgradeIds = new Set(["split", "damage", "rapid", "pierce", "critical"]);
+    const attackUpgradeIds = new Set(["split", "damage", "rapid", "pierce", "critical", "orb"]);
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
@@ -2827,6 +2847,14 @@ const dungeonWalls =     [
         pierce: 0,
         critChance: 0.05,
         critDamage: 1.75,
+        orbCount: 0,
+        orbAngle: 0,
+        orbDamage: 18,
+        orbRadius: 76,
+        orbSize: 10,
+        orbSpeed: 2.4,
+        orbHitCooldown: 0.5,
+        orbHits: new Map(),
         name: cleanName(nicknameInput.value),
         reload: 0,
         dash: 0,
@@ -2864,6 +2892,7 @@ const dungeonWalls =     [
         damageTexts: [],
         bullets: [],
         zombies: [],
+        nextZombieId: 1,
         pickups: [],
       });
       state.props = makeProps();
@@ -2943,7 +2972,7 @@ const dungeonWalls =     [
         charge: true,
       },
       boss: {
-        hp: 14.5,
+        hp: 18,
         speed: 0.52,
         damage: 30,
         radius: [44, 50],
@@ -2972,9 +3001,10 @@ const dungeonWalls =     [
       const spec = zombieTypes[type] || zombieTypes.normal;
       const radius = rand(spec.radius[0], spec.radius[1]);
       const point = getSpawnPoint(radius);
-      const baseHp = 36 + state.wave * 5;
+      const baseHp = 40 + state.wave * 6;
       const baseSpeed = rand(58, 84) + state.wave * 5;
       const z = {
+        id: state.nextZombieId++,
         x: point.x,
         y: point.y,
         r: radius,
@@ -3155,6 +3185,83 @@ const dungeonWalls =     [
       });
     }
 
+    function getOrbPosition(index) {
+      const count = Math.max(1, player.orbCount);
+      const angle = player.orbAngle + (Math.PI * 2 * index) / count;
+      return {
+        x: player.x + Math.cos(angle) * player.orbRadius,
+        y: player.y + Math.sin(angle) * player.orbRadius,
+        angle,
+      };
+    }
+
+    function updateOrbs(dt) {
+      if (player.orbCount <= 0) return;
+      player.orbAngle = (player.orbAngle + player.orbSpeed * dt) % (Math.PI * 2);
+
+      for (const [key, cooldown] of player.orbHits) {
+        const nextCooldown = cooldown - dt;
+        if (nextCooldown <= 0) {
+          player.orbHits.delete(key);
+        } else {
+          player.orbHits.set(key, nextCooldown);
+        }
+      }
+
+      for (let i = 0; i < player.orbCount; i++) {
+        const orb = getOrbPosition(i);
+        for (const zombie of state.zombies) {
+          if (zombie.hp <= 0 || distance(orb, zombie) > zombie.r + player.orbSize) continue;
+          const hitKey = `${i}:${zombie.id}`;
+          if (player.orbHits.has(hitKey)) continue;
+          player.orbHits.set(hitKey, player.orbHitCooldown);
+
+          zombie.hp -= player.orbDamage;
+          zombie.hit = 0.12;
+          addDamageText(zombie.x, zombie.y - zombie.r * 0.65, player.orbDamage, false);
+          const hitAngle = Math.atan2(zombie.y - player.y, zombie.x - player.x);
+          const knockback = zombie.isBoss ? 7 : zombie.type === "tank" ? 12 : 18;
+          moveActor(
+            zombie,
+            Math.cos(hitAngle) * knockback,
+            Math.sin(hitAngle) * knockback,
+            zombie.r * 0.85
+          );
+          puff(orb.x, orb.y, "#ffd0f0", zombie.isBoss ? 12 : 8, zombie.isBoss ? 155 : 120);
+          if (zombie.hp <= 0) killZombie(zombie);
+        }
+      }
+    }
+
+    function isOnScreen(entity, margin = 80) {
+      return entity.x >= camera.x - margin &&
+        entity.x <= camera.x + getViewport().worldW + margin &&
+        entity.y >= camera.y - margin &&
+        entity.y <= camera.y + getViewport().worldH + margin;
+    }
+
+    function detonateStarBomb(x, y) {
+      puff(x, y, "#ffd0f0", 90, 360);
+      puff(x, y, "#fff8ff", 44, 260);
+      for (const zombie of state.zombies) {
+        if (zombie.hp <= 0 || !isOnScreen(zombie, 140)) continue;
+        const damage = zombie.isBoss ? Math.max(1, Math.round(zombie.maxHp * 0.12)) : 160;
+        zombie.hp -= damage;
+        zombie.hit = 0.18;
+        addDamageText(zombie.x, zombie.y - zombie.r * 0.65, damage, true);
+        const angle = Math.atan2(zombie.y - y, zombie.x - x);
+        const knockback = zombie.isBoss ? 10 : zombie.type === "tank" ? 24 : 34;
+        moveActor(
+          zombie,
+          Math.cos(angle) * knockback,
+          Math.sin(angle) * knockback,
+          zombie.r * 0.85
+        );
+        puff(zombie.x, zombie.y, "#ff8fe6", zombie.isBoss ? 14 : 9, zombie.isBoss ? 170 : 135);
+        if (zombie.hp <= 0) killZombie(zombie);
+      }
+    }
+
     function update(dt) {
       if (state.pausedForLevelUp) {
         updateHud();
@@ -3259,6 +3366,8 @@ const dungeonWalls =     [
         }
       }
 
+      updateOrbs(dt);
+
       for (const bullet of state.bullets) {
         for (const zombie of state.zombies) {
           if (zombie.hp <= 0 || distance(bullet, zombie) > zombie.r + 4) continue;
@@ -3302,9 +3411,10 @@ const dungeonWalls =     [
           if (pickup.type === "split") {
             player.projectileCount = Math.min(player.maxProjectileCount, player.projectileCount + 1);
           }
+          if (pickup.type === "star-bomb") detonateStarBomb(pickup.x, pickup.y);
           pickup.life = 0;
-          const pickupColor = pickup.type === "health" ? "#6fd08c" : pickup.type === "split" ? "#ff8fe6" : pickup.type === "xp" ? "#8fe6ff" : "#e9c46a";
-          puff(pickup.x, pickup.y, pickupColor, pickup.type === "split" ? 22 : 12, pickup.type === "split" ? 190 : 125);
+          const pickupColor = pickup.type === "health" ? "#6fd08c" : pickup.type === "split" || pickup.type === "star-bomb" ? "#ff8fe6" : pickup.type === "xp" ? "#8fe6ff" : "#e9c46a";
+          puff(pickup.x, pickup.y, pickupColor, pickup.type === "split" || pickup.type === "star-bomb" ? 22 : 12, pickup.type === "split" || pickup.type === "star-bomb" ? 190 : 125);
         }
         pickup.life -= dt;
       }
@@ -3342,8 +3452,17 @@ const dungeonWalls =     [
         spin: 0,
         life: zombie.isBoss ? 26 : 22,
       });
+      if (zombie.isBoss) {
+        state.pickups.push({
+          x: zombie.x + rand(-16, 16),
+          y: zombie.y + rand(-16, 16),
+          type: "star-bomb",
+          spin: 0,
+          life: 18,
+        });
+      }
       const canUpgradeShot = player.projectileCount < player.maxProjectileCount;
-      const splitChance = zombie.isBoss ? 0.35 : 0.12;
+      const splitChance = zombie.isBoss ? 0.1 : 0.04;
       if (canUpgradeShot && Math.random() < splitChance) {
         state.pickups.push({
           x: zombie.x,
@@ -3444,6 +3563,7 @@ const dungeonWalls =     [
       drawPickups();
       drawBullets();
       drawZombies();
+      drawOrbs();
       drawPlayer();
       drawParticles();
       drawDamageTexts();
@@ -3625,6 +3745,50 @@ const dungeonWalls =     [
       }
     }
 
+    function drawOrbs() {
+      if (player.orbCount <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = 0.82;
+      ctx.strokeStyle = "rgba(255, 199, 239, 0.14)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 18]);
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.orbRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      for (let i = 0; i < player.orbCount; i++) {
+        const orb = getOrbPosition(i);
+        const pulse = 0.5 + 0.5 * Math.sin(player.orbAngle * 1.8 + i * 1.7);
+        const r = player.orbSize + pulse * 1.2;
+        ctx.save();
+        ctx.translate(orb.x, orb.y);
+        ctx.rotate(orb.angle);
+        ctx.shadowColor = "#ff9fd6";
+        ctx.shadowBlur = 12;
+        const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, r + 9);
+        glow.addColorStop(0, "rgba(255, 255, 255, 0.92)");
+        glow.addColorStop(0.4, "rgba(255, 163, 222, 0.76)");
+        glow.addColorStop(0.74, "rgba(202, 194, 255, 0.28)");
+        glow.addColorStop(1, "rgba(255, 143, 230, 0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, r + 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 7;
+        ctx.fillStyle = "#ffd0f0";
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#fff8ff";
+        ctx.beginPath();
+        ctx.arc(-r * 0.28, -r * 0.34, Math.max(2, r * 0.28), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
     function drawBullets() {
       for (const bullet of state.bullets) {
         ctx.save();
@@ -3742,6 +3906,28 @@ const dungeonWalls =     [
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText("+", 0, 0);
+        } else if (pickup.type === "star-bomb") {
+          ctx.shadowColor = "#ff8fe6";
+          ctx.shadowBlur = 20;
+          drawStar(0, 0, 6, 18, 8);
+          ctx.fillStyle = "#ff9fd6";
+          ctx.fill();
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "#fff8ff";
+          ctx.stroke();
+          ctx.shadowColor = "#fff8ff";
+          ctx.shadowBlur = 12;
+          ctx.fillStyle = "#fff8ff";
+          ctx.beginPath();
+          ctx.arc(0, 0, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.rotate(-pickup.spin);
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "#40243a";
+          ctx.font = "900 13px ui-sans-serif, system-ui, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("★", 0, 1);
         } else {
           ctx.fillStyle = "#e9c46a";
           ctx.fillRect(-10, -10, 20, 20);
